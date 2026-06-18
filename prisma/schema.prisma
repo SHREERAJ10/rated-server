@@ -1,0 +1,79 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User{
+  id String @id @default(uuid())
+  displayName String @db.VarChar(40)
+  username String @db.VarChar(40)
+  pfpUrl String
+  bio String?
+  createdAt DateTime @default(now())
+  posts Post[]
+}
+
+model Post{
+  id String @id @default(uuid())
+  authorId String
+  caption String @db.VarChar(200)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  author User @relation(fields:[authorId], references: [id])
+  like Like[]
+  postMedia PostMedia[]
+  comment Comment[]
+  score Rating[]
+}
+
+model Like{
+  id String @id @default(uuid())
+  postId String
+  likedByUserId String
+  caption String @db.VarChar(200)
+  postLiked Boolean
+  @@unique(name: "likedUser", [postId, likedByUserId])
+  post Post @relation(fields: [postId], references: [id])
+}
+
+model PostMedia{
+  id String @id @default(uuid())
+  postId String
+  mediaUrl String
+  post Post @relation(fields: [postId], references: [id])
+}
+
+model Rating{
+  id String @id @default(uuid())
+  postId String
+  ratedByUserId String
+  score Int
+  post Post @relation(fields: [postId], references: [id])
+}
+
+model Comment{
+  id String @id @default(uuid())
+  postId String
+  commentedByUserId String
+  comment String @db.VarChar(200)
+  createdAt DateTime @default(now())
+  post Post @relation(fields: [postId], references: [id])
+  like CommentLike[]
+}
+
+model CommentLike{
+  id String @id @default(uuid())
+  commentId String
+  likedByUserId String
+  commentLiked Boolean
+  comment Comment @relation(fields: [commentId], references: [id])
+}
