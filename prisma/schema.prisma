@@ -15,7 +15,7 @@ datasource db {
 model User{
   id String @id @default(uuid())
   displayName String @db.VarChar(40)
-  username String @db.VarChar(40)
+  username String @db.VarChar(40) @unique
   pfpUrl String
   bio String?
   createdAt DateTime @default(now())
