@@ -5,7 +5,7 @@ export const User = z.object({
     .string()
     .trim()
     .max(40)
-    .regex(/^[a-zA-Z0-9 ]*$/),
+    .regex(/^[a-zA-Z0-9._-]+$/),
   displayName: z.string().trim().max(40),
   bio: z.string().trim().max(60).optional(),
   pfpUrl: z.string().trim(),
