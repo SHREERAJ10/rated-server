@@ -1,5 +1,6 @@
 import express, { type Request, type Response } from "express";
 import userRouter from './routes/user.route.js';
+import postRouter from './routes/post.route.js';
 import verifyToken from "./middlewares/verifyToken.js";
 import { generateCloudinaryUploadSignature } from "./utils/generateCloudinaryUploadSignature.js";
 
@@ -13,6 +14,7 @@ app.get('/signature', verifyToken, async (req:Request, res:Response)=>{
       res.status(200).json({success:true, data:signature})
 })
 app.use('/user', verifyToken, userRouter);
+app.use('/post',verifyToken, postRouter);
 
 app.listen(3000, () => {
   console.log("Listening at port 3000");
