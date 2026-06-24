@@ -39,7 +39,6 @@ model Like{
   id String @id @default(uuid())
   postId String
   likedByUserId String
-  caption String @db.VarChar(200)
   postLiked Boolean
   @@unique(name: "likedUser", [postId, likedByUserId])
   post Post @relation(fields: [postId], references: [id])
