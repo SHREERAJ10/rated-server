@@ -41,3 +41,14 @@ export const registerLike = async (likedByUserId: string, postId: string) => {
   });
   return registeredLike;
 };
+
+export const registerScore = async (ratedByUserId: string, postId: string, score:number) => {
+  const registeredScore = await prisma.rating.create({
+    data: {
+      postId: postId,
+      ratedByUserId: ratedByUserId,
+      score: score,
+    },
+  });
+  return registeredScore;
+};
