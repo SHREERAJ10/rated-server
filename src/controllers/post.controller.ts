@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { Post, Score } from "../models/post.model.js";
+import { Comment, Post, Score } from "../models/post.model.js";
 import * as postService from "../services/post.service.js";
 
 export const createPost = async (req: Request, res: Response) => {
@@ -45,6 +45,23 @@ export const registerScore = async (req: Request, res: Response) => {
       success: true,
       message: "Post rated",
       data: registeredScore,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ success: false, error: "internal server error!" });
+  }
+};
+
+export const registerComment = async (req: Request, res: Response) => {
+  try {
+    const id = req.uid ?? "";
+    const postId = req.params.postId as string;
+    const {comment} = Comment.parse(req.body);
+    const registeredComment= await postService.registerComment(id, postId, comment);
+    res.status(200).json({
+      success: true,
+      message: "comment added successfully",
+      data: registeredComment,
     });
   } catch (err) {
     console.log(err);

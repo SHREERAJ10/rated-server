@@ -52,3 +52,14 @@ export const registerScore = async (ratedByUserId: string, postId: string, score
   });
   return registeredScore;
 };
+
+export const registerComment = async (commentedByUserId: string, postId: string, comment:string) => {
+  const registeredComment = await prisma.comment.create({
+    data: {
+      postId: postId,
+      commentedByUserId: commentedByUserId,
+      comment: comment,
+    },
+  });
+  return registeredComment;
+};
