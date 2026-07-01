@@ -42,7 +42,11 @@ export const registerLike = async (likedByUserId: string, postId: string) => {
   return registeredLike;
 };
 
-export const registerScore = async (ratedByUserId: string, postId: string, score:number) => {
+export const registerScore = async (
+  ratedByUserId: string,
+  postId: string,
+  score: number,
+) => {
   const registeredScore = await prisma.rating.create({
     data: {
       postId: postId,
@@ -53,7 +57,11 @@ export const registerScore = async (ratedByUserId: string, postId: string, score
   return registeredScore;
 };
 
-export const registerComment = async (commentedByUserId: string, postId: string, comment:string) => {
+export const registerComment = async (
+  commentedByUserId: string,
+  postId: string,
+  comment: string,
+) => {
   const registeredComment = await prisma.comment.create({
     data: {
       postId: postId,
@@ -62,4 +70,57 @@ export const registerComment = async (commentedByUserId: string, postId: string,
     },
   });
   return registeredComment;
+};
+
+export const getPostMedia = async (postIds: [string]) => {
+  const postMedia = await prisma.postMedia.findMany({
+    where: {
+      postId: {
+        in: postIds,
+      },
+    },
+  });
+  return postMedia;
+};
+
+export const getAuthors = async (authorIds: [string]) => {
+  const authors = await prisma.user.findMany({
+    where: {
+      id: {
+        in: authorIds,
+      },
+    },
+    select: {
+      id: true,
+      displayName: true,
+      username: true,
+    },
+  });
+  return authors;
+};
+
+export const getLikeCountOfEachPost = async (postIds: [string]) => {
+  const likeCount = await prisma.like.groupBy({
+    by: ["postId"],
+    where: {
+      postId: {
+        in: postIds,
+      },
+    },
+    _count: { likedByUserId: true },
+  });
+  return likeCount;
+};
+
+export const getPostRating = async (postIds: [string]) => {
+  const postRating = await prisma.rating.groupBy({
+    by: ["postId"],
+    where: {
+      postId: {
+        in: postIds,
+      },
+    },
+    _avg: { score: true },
+  });
+  return postRating;
 };

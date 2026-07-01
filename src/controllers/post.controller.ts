@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { Comment, Post, Score } from "../models/post.model.js";
 import * as postService from "../services/post.service.js";
+import { paginate } from "../utils/paginate.js";
 
 export const createPost = async (req: Request, res: Response) => {
   try {
@@ -39,7 +40,7 @@ export const registerScore = async (req: Request, res: Response) => {
   try {
     const id = req.uid ?? "";
     const postId = req.params.postId as string;
-    const {score} = Score.parse(req.body);
+    const { score } = Score.parse(req.body);
     const registeredScore = await postService.registerScore(id, postId, score);
     res.status(200).json({
       success: true,
@@ -56,12 +57,135 @@ export const registerComment = async (req: Request, res: Response) => {
   try {
     const id = req.uid ?? "";
     const postId = req.params.postId as string;
-    const {comment} = Comment.parse(req.body);
-    const registeredComment= await postService.registerComment(id, postId, comment);
+    const { comment } = Comment.parse(req.body);
+    const registeredComment = await postService.registerComment(
+      id,
+      postId,
+      comment,
+    );
     res.status(200).json({
       success: true,
       message: "comment added successfully",
       data: registeredComment,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ success: false, error: "internal server error!" });
+  }
+};
+
+interface Author {
+  id: string;
+  displayName: string;
+  username: string;
+}
+
+interface PostMedia {
+  id: string;
+  postId: string;
+  mediaUrl: string;
+}
+
+interface Rating {
+  _avg: {
+    score: number;
+  };
+  postId: string;
+}
+
+interface Like {
+  _count: {
+    likedByUserId: number;
+  };
+  postId: string;
+}
+
+interface Post {
+  id: string;
+  authorId: string;
+  caption: string;
+  createdAt: string;
+  author: Author;
+  media: PostMedia;
+  rating: Rating;
+  like: Like;
+}
+
+export const getPost = async (req: Request, res: Response) => {
+  try {
+    const pageSize = 5;
+    const modelName = "post";
+    const page = Number(req.query.page ?? 1);
+    const posts = await paginate(
+      page,
+      pageSize,
+      modelName,
+      {},
+      {
+        id: true,
+        authorId: true,
+        caption: true,
+        createdAt: true,
+      },
+    );
+
+    const postIds = posts.items.map((post: Post) => post.id);
+    const authorIds = posts.items.map((post: Post) => post.authorId);
+
+    const postMedia = await postService.getPostMedia(postIds);
+    const postAuthors = await postService.getAuthors(authorIds);
+    const likeCountOfEachPost =
+      await postService.getLikeCountOfEachPost(postIds);
+    const postRating = await postService.getPostRating(postIds);
+
+    posts.items = posts.items.map((post: Post) => {
+      post.author = postAuthors.filter((author: Author) => {
+        return author.id == post.authorId;
+      })[0];
+
+      const filteredMedia = postMedia.filter((media: PostMedia) => {
+        return media.postId == post.id;
+      });
+      post.media = filteredMedia.map((media: PostMedia) => {
+        return { id: media.id, url: media.mediaUrl };
+      });
+
+      const filteredRating = postRating.filter((rating: Rating) => {
+        return rating.postId == post.id;
+      });
+
+      post.rating =
+        filteredRating.length != 0
+          ? filteredRating.map((rating: Rating) => {
+              return { score: Math.round(rating._avg.score) ?? 0, total: 10 };
+            })[0]
+          : { score: 0, total: 10 };
+
+      const filteredLikes = likeCountOfEachPost.filter((like: Like) => {
+        return like.postId == post.id;
+      });
+
+      post.like =
+        filteredLikes.length != 0
+          ? filteredLikes.map((like: Like) => {
+              return { count: Math.round(like._count.likedByUserId) };
+            })[0]
+          : { count: 0 };
+
+      return {
+        id: post.id,
+        caption: post.caption,
+        createdAt: post.createdAt,
+        author: post.author,
+        media: post.media,
+        rating: post.rating,
+        like: post.like,
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      data: posts,
     });
   } catch (err) {
     console.log(err);
