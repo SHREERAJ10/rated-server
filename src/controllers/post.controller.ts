@@ -192,3 +192,46 @@ export const getPost = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, error: "internal server error!" });
   }
 };
+
+interface Commentor {
+  id: string;
+  displayName: string;
+  username: string;
+}
+
+interface Comment {
+  id: string;
+  comment: string;
+  commentedByUserId: string;
+  createdAt: string;
+  commentor: Commentor;
+}
+
+export const getComment = async (req: Request, res: Response) => {
+  try {
+    const postId = req.params.postId as string;
+    const comments = await postService.getComment(postId);
+    const commentorIds: [string] = comments.items.map(
+      (comment: Comment) => comment.commentedByUserId,
+    );
+    const commentors = await postService.getCommentors(commentorIds);
+
+    comments.items = comments.items.map((comment: Comment) => {
+      comment.commentor = (commentors.filter((commentor: Commentor) => {
+        return commentor.id == comment.commentedByUserId;
+      }))[0];
+      return {
+        ...comment,
+        commentor: comment.commentor,
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      data: comments,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ success: false, error: "internal server error!" });
+  }
+};

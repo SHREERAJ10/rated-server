@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client/extension";
 import { prisma } from "../../db.js";
+import { paginate } from "../utils/paginate.js";
 
 export const createPost = async (
   authorId: string,
@@ -123,4 +124,41 @@ export const getPostRating = async (postIds: [string]) => {
     _avg: { score: true },
   });
   return postRating;
+};
+
+export const getComment = async (postId: string) => {
+  const page = 1;
+  const pageSize = 10;
+  const model = "comment";
+  const comments = await paginate(
+    page,
+    pageSize,
+    model,
+    {
+      postId: postId,
+    },
+    {
+      id: true,
+      comment: true,
+      commentedByUserId: true,
+      createdAt: true,
+    },
+  );
+  return comments;
+};
+
+export const getCommentors = async (commentorIds: [string]) => {
+  const commentors = await prisma.user.findMany({
+    where: {
+      id: {
+        in: commentorIds,
+      },
+    },
+    select: {
+      id: true,
+      displayName: true,
+      username: true,
+    },
+  });
+  return commentors;
 };
