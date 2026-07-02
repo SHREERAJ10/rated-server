@@ -17,14 +17,6 @@ export const paginate = async (
     select: select || {},
     skip: skip,
     take: pageSize,
-    orderBy: [
-      {
-        updatedAt: "desc",
-      },
-      {
-        createdAt: "desc",
-      },
-    ],
   });
 
   return {
