@@ -153,6 +153,7 @@ export const getCommentors = async (commentorIds: [string]) => {
       id: true,
       displayName: true,
       username: true,
+      pfpUrl: true,
     },
   });
   return commentors;
