@@ -106,7 +106,7 @@ interface Post {
   caption: string;
   createdAt: string;
   author: Author;
-  media: PostMedia;
+  postMedia: PostMedia;
   rating: Rating;
   like: Like;
 }
@@ -121,13 +121,14 @@ export const getPost = async (req: Request, res: Response) => {
       pageSize,
       modelName,
       {},
-      {},
+      {
+        postMedia: true,
+      },
     );
 
     const postIds = posts.items.map((post: Post) => post.id);
     const authorIds = posts.items.map((post: Post) => post.authorId);
 
-    const postMedia = await postService.getPostMedia(postIds);
     const postAuthors = await postService.getAuthors(authorIds);
     const likeCountOfEachPost =
       await postService.getLikeCountOfEachPost(postIds);
@@ -137,13 +138,6 @@ export const getPost = async (req: Request, res: Response) => {
       post.author = postAuthors.filter((author: Author) => {
         return author.id == post.authorId;
       })[0];
-
-      const filteredMedia = postMedia.filter((media: PostMedia) => {
-        return media.postId == post.id;
-      });
-      post.media = filteredMedia.map((media: PostMedia) => {
-        return { id: media.id, url: media.mediaUrl };
-      });
 
       const filteredRating = postRating.filter((rating: Rating) => {
         return rating.postId == post.id;
@@ -172,7 +166,7 @@ export const getPost = async (req: Request, res: Response) => {
         caption: post.caption,
         createdAt: post.createdAt,
         author: post.author,
-        media: post.media,
+        media: post.postMedia,
         rating: post.rating,
         like: post.like,
       };
