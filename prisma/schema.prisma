@@ -32,7 +32,7 @@ model Post{
   like Like[]
   postMedia PostMedia[]
   comment Comment[]
-  score Rating[]
+  rating Rating[]
 }
 
 model Like{
