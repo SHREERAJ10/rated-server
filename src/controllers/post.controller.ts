@@ -121,12 +121,7 @@ export const getPost = async (req: Request, res: Response) => {
       pageSize,
       modelName,
       {},
-      {
-        id: true,
-        authorId: true,
-        caption: true,
-        createdAt: true,
-      },
+      {},
     );
 
     const postIds = posts.items.map((post: Post) => post.id);
@@ -217,9 +212,9 @@ export const getComment = async (req: Request, res: Response) => {
     const commentors = await postService.getCommentors(commentorIds);
 
     comments.items = comments.items.map((comment: Comment) => {
-      comment.commentor = (commentors.filter((commentor: Commentor) => {
+      comment.commentor = commentors.filter((commentor: Commentor) => {
         return commentor.id == comment.commentedByUserId;
-      }))[0];
+      })[0];
       return {
         ...comment,
         commentor: comment.commentor,

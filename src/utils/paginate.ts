@@ -5,7 +5,7 @@ export const paginate = async (
   pageSize: number,
   modelName: string,
   where: object,
-  select: object,
+  include: object,
 ) => {
   const db = prisma[modelName];
   const skip = (+page - 1) * +pageSize;
@@ -14,7 +14,7 @@ export const paginate = async (
   });
   const items = await db.findMany({
     where: where || {},
-    select: select || {},
+    include: include || {},
     skip: skip,
     take: pageSize,
   });

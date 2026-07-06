@@ -137,12 +137,7 @@ export const getComment = async (postId: string) => {
     {
       postId: postId,
     },
-    {
-      id: true,
-      comment: true,
-      commentedByUserId: true,
-      createdAt: true,
-    },
+    {},
   );
   return comments;
 };
