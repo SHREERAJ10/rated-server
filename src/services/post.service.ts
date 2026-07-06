@@ -158,3 +158,47 @@ export const getCommentors = async (commentorIds: [string]) => {
   });
   return commentors;
 };
+
+interface PostLike {
+  id: string;
+  postId: string;
+  likedByUserId: string;
+  postLiked: boolean;
+}
+
+export const getPostLikers = async (postId: string) => {
+  const page = 1;
+  const pageSize = 10;
+  const modelName = "Like";
+  const postLikers = await prisma.$transaction(
+    async (tx: Prisma.TransactionClient) => {
+      const postLikes = await paginate(
+        page,
+        pageSize,
+        modelName,
+        {
+          postId: postId,
+        },
+        {},
+      );
+      const postLikerIds = postLikes.items.map(
+        (postLike: PostLike) => postLike.likedByUserId,
+      );
+      postLikes.items = await tx.user.findMany({
+        where: {
+          id: {
+            in: postLikerIds,
+          },
+        },
+        select: {
+          id: true,
+          displayName: true,
+          username: true,
+          pfpUrl: true,
+        },
+      });
+      return postLikes;
+    },
+  );
+  return postLikers;
+};

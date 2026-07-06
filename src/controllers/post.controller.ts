@@ -224,3 +224,19 @@ export const getComment = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, error: "internal server error!" });
   }
 };
+
+export const getPostLikers = async (req: Request, res: Response) => {
+  try {
+    const postId = req.params.postId as string;
+    console.log(postId)
+    const postLikers = await postService.getPostLikers(postId);
+
+    res.status(200).json({
+      success: true,
+      data: postLikers,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ success: false, error: "internal server error!" });
+  }
+};
