@@ -18,3 +18,12 @@ export const activateUser = async (
   });
   return user;
 };
+
+export const getUser = async (username: string) => {
+  const user = await prisma.user.findUnique({
+    where: {
+      username: username,
+    },
+  });
+  return user;
+};
