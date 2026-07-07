@@ -107,7 +107,10 @@ interface Post {
   createdAt: string;
   author: Author;
   postMedia: PostMedia;
-  rating: Rating;
+  rating: {
+    score: number;
+    total: number;
+  };
   like: Like;
 }
 
@@ -228,12 +231,84 @@ export const getComment = async (req: Request, res: Response) => {
 export const getPostLikers = async (req: Request, res: Response) => {
   try {
     const postId = req.params.postId as string;
-    console.log(postId)
+    console.log(postId);
     const postLikers = await postService.getPostLikers(postId);
 
     res.status(200).json({
       success: true,
       data: postLikers,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ success: false, error: "internal server error!" });
+  }
+};
+
+export const getUserPosts = async (req: Request, res: Response) => {
+  try {
+    const username = req.params.username as string;
+    const pageSize = 10;
+    const modelName = "post";
+    const page = Number(req.query.page ?? 1);
+    const userPosts = await paginate(
+      page,
+      pageSize,
+      modelName,
+      {
+        author: {
+          username: username,
+        },
+      },
+      {
+        postMedia: true,
+        author: {
+          select: {
+            id: true,
+            displayName: true,
+            username: true,
+            pfpUrl: true,
+          },
+        },
+        _count: {
+          select: { like: true, comment: true },
+        },
+      },
+    );
+
+    const postIds = userPosts.items.map((post: Post) => post.id);
+
+    const postsRating = await postService.getPostRating(postIds);
+
+    userPosts.items = userPosts.items.map((post: Post) => {
+      const postRating = postsRating.find(
+        (rating: Rating) => rating.postId === post.id,
+      );
+      if (postRating) {
+        post.rating = {
+          score: Math.round(postRating._avg.score) ?? 0,
+          total: 10,
+        };
+      } else {
+        post.rating = {
+          score: 0,
+          total: 10,
+        };
+      }
+      return {
+        id: post.id,
+        author: post.author,
+        caption: post.caption,
+        media: post.postMedia,
+        createdAt: post.createdAt,
+        rating: post.rating,
+        like: { count: post._count.like },
+        comment: { count: post._count.comment },
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      data: userPosts,
     });
   } catch (err) {
     console.log(err);
