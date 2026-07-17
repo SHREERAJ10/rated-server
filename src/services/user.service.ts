@@ -27,3 +27,12 @@ export const getUser = async (username: string) => {
   });
   return user;
 };
+
+export const getOnboardingStatus = async (id: string) => {
+  const user = await prisma.user.findUnique({
+    where: {
+      id: id,
+    },
+  });
+  return user;
+};

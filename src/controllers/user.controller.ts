@@ -37,3 +37,18 @@ export const getUser = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, error: "internal server error!" });
   }
 };
+
+export const getOnboardingStatus = async (req: Request, res: Response) => {
+  try {
+    const id = req.uid ?? "";
+    const user = await userService.getOnboardingStatus(id);
+    const response = user ? { userOnboard: true } : { userOnboard: false };
+    res.status(200).json({
+      success: true,
+      data: response,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ success: false, error: "internal server error!" });
+  }
+};
