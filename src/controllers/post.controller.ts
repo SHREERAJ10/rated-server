@@ -93,13 +93,6 @@ interface Rating {
   postId: string;
 }
 
-interface Like {
-  _count: {
-    likedByUserId: number;
-  };
-  postId: string;
-}
-
 interface Post {
   id: string;
   authorId: string;
@@ -111,7 +104,10 @@ interface Post {
     score: number;
     total: number;
   };
-  like: Like;
+  _count: {
+    like: number;
+    comment: number;
+  };
 }
 
 export const getPost = async (req: Request, res: Response) => {
@@ -126,21 +122,25 @@ export const getPost = async (req: Request, res: Response) => {
       {},
       {
         postMedia: true,
+        author: {
+          select: {
+            id: true,
+            displayName: true,
+            username: true,
+            pfpUrl: true,
+          },
+        },
+        _count: {
+          select: { like: true, comment: true },
+        },
       },
     );
 
     const postIds = posts.items.map((post: Post) => post.id);
-    const authorIds = posts.items.map((post: Post) => post.authorId);
 
-    const postAuthors = await postService.getAuthors(authorIds);
-    const likeCountOfEachPost =
-      await postService.getLikeCountOfEachPost(postIds);
     const postRating = await postService.getPostRating(postIds);
 
     posts.items = posts.items.map((post: Post) => {
-      post.author = postAuthors.filter((author: Author) => {
-        return author.id == post.authorId;
-      })[0];
 
       const filteredRating = postRating.filter((rating: Rating) => {
         return rating.postId == post.id;
@@ -153,17 +153,6 @@ export const getPost = async (req: Request, res: Response) => {
             })[0]
           : { score: 0, total: 10 };
 
-      const filteredLikes = likeCountOfEachPost.filter((like: Like) => {
-        return like.postId == post.id;
-      });
-
-      post.like =
-        filteredLikes.length != 0
-          ? filteredLikes.map((like: Like) => {
-              return { count: Math.round(like._count.likedByUserId) };
-            })[0]
-          : { count: 0 };
-
       return {
         id: post.id,
         caption: post.caption,
@@ -171,7 +160,12 @@ export const getPost = async (req: Request, res: Response) => {
         author: post.author,
         media: post.postMedia,
         rating: post.rating,
-        like: post.like,
+        like: {
+          count: post._count.like,
+        },
+        comment: {
+          count: post._count.comment,
+        },
       };
     });
 
