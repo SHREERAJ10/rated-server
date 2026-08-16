@@ -36,6 +36,22 @@ export const registerLike = async (req: Request, res: Response) => {
   }
 };
 
+export const deleteLike = async (req: Request, res: Response) => {
+  try {
+    const id = req.uid ?? "";
+    const postId = req.params.postId as string;
+    const deletedLike = await postService.deleteLike(id, postId);
+    res.status(200).json({
+      success: true,
+      message: "Post Unliked",
+      data: deletedLike,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ success: false, error: "internal server error!" });
+  }
+};
+
 export const registerScore = async (req: Request, res: Response) => {
   try {
     const id = req.uid ?? "";
@@ -108,10 +124,12 @@ interface Post {
     like: number;
     comment: number;
   };
+  like: [];
 }
 
 export const getPost = async (req: Request, res: Response) => {
   try {
+    const id = req.uid ?? "";
     const pageSize = 5;
     const modelName = "post";
     const page = Number(req.query.page ?? 1);
@@ -130,6 +148,14 @@ export const getPost = async (req: Request, res: Response) => {
             pfpUrl: true,
           },
         },
+        like: {
+          where: {
+            likedByUserId: id,
+          },
+          select: {
+            id: true,
+          },
+        },
         _count: {
           select: { like: true, comment: true },
         },
@@ -137,11 +163,11 @@ export const getPost = async (req: Request, res: Response) => {
     );
 
     const postIds = posts.items.map((post: Post) => post.id);
+    // const isPostLikedByUser =
 
     const postRating = await postService.getPostRating(postIds);
 
     posts.items = posts.items.map((post: Post) => {
-
       const filteredRating = postRating.filter((rating: Rating) => {
         return rating.postId == post.id;
       });
@@ -166,6 +192,7 @@ export const getPost = async (req: Request, res: Response) => {
         comment: {
           count: post._count.comment,
         },
+        isLikedByUser: post.like.length != 0 ? true : false,
       };
     });
 

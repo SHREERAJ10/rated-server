@@ -33,14 +33,45 @@ export const createPost = async (
 };
 
 export const registerLike = async (likedByUserId: string, postId: string) => {
-  const registeredLike = await prisma.like.create({
-    data: {
-      postId: postId,
-      likedByUserId: likedByUserId,
-      postLiked: true,
-    },
-  });
-  return registeredLike;
+  const [registeredLike, totalLikeCount] = await prisma.$transaction([
+    prisma.like.create({
+      data: {
+        postId: postId,
+        likedByUserId: likedByUserId,
+        postLiked: true,
+      },
+    }),
+    prisma.like.count({
+      where: {
+        postId: postId,
+      },
+    }),
+  ]);
+  return { ...registeredLike, likeCount: totalLikeCount };
+};
+
+export const deleteLike = async (likedByUserId: string, postId: string) => {
+  const [deletedLike, totalLikeCount] = await prisma.$transaction([
+    prisma.like.delete({
+      where: {
+        likedUser: {
+          postId: postId,
+          likedByUserId: likedByUserId,
+        },
+      },
+    }),
+    prisma.like.count({
+      where: {
+        postId: postId,
+      },
+    }),
+  ]);
+  return {
+    id: deletedLike.id,
+    postId: deletedLike.postId,
+    postLiked: false,
+    likeCount: totalLikeCount,
+  };
 };
 
 export const registerScore = async (
