@@ -79,10 +79,12 @@ export const registerComment = async (req: Request, res: Response) => {
       postId,
       comment,
     );
+    const commentedByUser = await postService.getUserData(id);
+    const response = {...registeredComment, commentor:{...commentedByUser}}
     res.status(200).json({
       success: true,
       message: "comment added successfully",
-      data: registeredComment,
+      data: response,
     });
   } catch (err) {
     console.log(err);

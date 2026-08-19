@@ -50,6 +50,21 @@ export const registerLike = async (likedByUserId: string, postId: string) => {
   return { ...registeredLike, likeCount: totalLikeCount };
 };
 
+export const getUserData = async (userId: string) => {
+  const user = prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+    select: {
+      id: true,
+      displayName: true,
+      username: true,
+      pfpUrl: true,
+    },
+  });
+  return user;
+};
+
 export const deleteLike = async (likedByUserId: string, postId: string) => {
   const [deletedLike, totalLikeCount] = await prisma.$transaction([
     prisma.like.delete({
