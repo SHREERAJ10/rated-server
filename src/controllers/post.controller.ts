@@ -80,7 +80,10 @@ export const registerComment = async (req: Request, res: Response) => {
       comment,
     );
     const commentedByUser = await postService.getUserData(id);
-    const response = {...registeredComment, commentor:{...commentedByUser}}
+    const response = {
+      ...registeredComment,
+      commentor: { ...commentedByUser },
+    };
     res.status(200).json({
       success: true,
       message: "comment added successfully",
@@ -130,6 +133,35 @@ interface Post {
 }
 
 export const getPost = async (req: Request, res: Response) => {
+  try {
+    const postId = req.params.postId as string;
+    const id = req.uid ?? "";
+    const post = await postService.getPost(id, postId);
+    const postRating = await postService.getPostRating([postId]);
+
+    const response = {
+      id: post.id,
+      caption: post.caption,
+      createdAt: post.createdAt,
+      author: post.author,
+      media: post.postMedia,
+      rating: { score: Math.round(postRating[0]?._avg?.score) || 0, total: 10 },
+      like: {
+        count: post._count.like,
+      },
+      comment: {
+        count: post._count.comment,
+      },
+      isLikedByUser: post.like.length != 0 ? true : false,
+    };
+    res.status(200).json({ success: true, data: response });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ success: false, error: "internal server error!" });
+  }
+};
+
+export const getPosts = async (req: Request, res: Response) => {
   try {
     const id = req.uid ?? "";
     const pageSize = 5;

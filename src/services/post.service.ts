@@ -248,3 +248,35 @@ export const getPostLikers = async (postId: string) => {
   );
   return postLikers;
 };
+
+export const getPost = async (id: string, postId: string) => {
+  const post = await prisma.post.findUnique({
+    where: {
+      id: postId,
+    },
+    include: {
+      postMedia: true,
+      author: {
+        select: {
+          id: true,
+          displayName: true,
+          username: true,
+          pfpUrl: true,
+        },
+      },
+      like: {
+        where: {
+          likedByUserId: id,
+        },
+        select: {
+          id: true,
+        },
+      },
+      _count: {
+        select: { like: true, comment: true },
+      },
+    },
+  });
+
+  return post;
+};
