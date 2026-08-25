@@ -38,6 +38,20 @@ export const getUser = async (req: Request, res: Response) => {
   }
 };
 
+export const fetchUser = async (req: Request, res: Response) => {
+  try {
+    const userId = req.uid ?? "";
+    const user = await userService.fetchUser(userId);
+    res.status(200).json({
+      success: true,
+      data: user,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ success: false, error: "internal server error!" });
+  }
+};
+
 export const getOnboardingStatus = async (req: Request, res: Response) => {
   try {
     const id = req.uid ?? "";

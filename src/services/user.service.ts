@@ -36,3 +36,12 @@ export const getOnboardingStatus = async (id: string) => {
   });
   return user;
 };
+
+export const fetchUser = async (id: string) => {
+  const user = await prisma.user.findUnique({
+    where: {
+      id: id,
+    },
+  });
+  return user;
+};
