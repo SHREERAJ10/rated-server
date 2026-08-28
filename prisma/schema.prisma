@@ -12,67 +12,70 @@ datasource db {
   provider = "postgresql"
 }
 
-model User{
-  id String @id @default(uuid())
-  displayName String @db.VarChar(40)
-  username String @db.VarChar(40) @unique
-  pfpUrl String
-  bio String?
-  createdAt DateTime @default(now())
-  posts Post[]
+model User {
+  id          String   @id @default(uuid())
+  displayName String   @db.VarChar(40)
+  username    String   @unique @db.VarChar(40)
+  pfpUrl      String
+  bio         String?
+  createdAt   DateTime @default(now())
+  posts       Post[]
 }
 
-model Post{
-  id String @id @default(uuid())
-  authorId String
-  caption String @db.VarChar(200)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  author User @relation(fields:[authorId], references: [id])
-  like Like[]
+model Post {
+  id        String      @id @default(uuid())
+  authorId  String
+  caption   String      @db.VarChar(200)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  author    User        @relation(fields: [authorId], references: [id])
+  like      Like[]
   postMedia PostMedia[]
-  comment Comment[]
-  rating Rating[]
+  comment   Comment[]
+  rating    Rating[]
 }
 
-model Like{
-  id String @id @default(uuid())
-  postId String
+model Like {
+  id            String  @id @default(uuid())
+  postId        String
   likedByUserId String
-  postLiked Boolean
+  postLiked     Boolean
+  post          Post    @relation(fields: [postId], references: [id])
+
   @@unique(name: "likedUser", [postId, likedByUserId])
-  post Post @relation(fields: [postId], references: [id])
 }
 
-model PostMedia{
-  id String @id @default(uuid())
-  postId String
+model PostMedia {
+  id       String @id @default(uuid())
+  postId   String
   mediaUrl String
-  post Post @relation(fields: [postId], references: [id])
+  post     Post   @relation(fields: [postId], references: [id])
 }
 
-model Rating{
-  id String @id @default(uuid())
-  postId String
+model Rating {
+  id            String @id @default(uuid())
+  postId        String
   ratedByUserId String
-  score Int
-  post Post @relation(fields: [postId], references: [id])
+  score         Int
+  post          Post   @relation(fields: [postId], references: [id])
+
+  @@unique(name: "ratedByUser", [postId, ratedByUserId])
 }
 
-model Comment{
-  id String @id @default(uuid())
-  postId String
+model Comment {
+  id                String        @id @default(uuid())
+  postId            String
   commentedByUserId String
-  comment String @db.VarChar(200)
-  createdAt DateTime @default(now())
-  post Post @relation(fields: [postId], references: [id])
-  like CommentLike[]
+  comment           String        @db.VarChar(200)
+  createdAt         DateTime      @default(now())
+  post              Post          @relation(fields: [postId], references: [id])
+  like              CommentLike[]
 }
 
-model CommentLike{
-  id String @id @default(uuid())
-  commentId String
+model CommentLike {
+  id            String  @id @default(uuid())
+  commentId     String
   likedByUserId String
-  commentLiked Boolean
-  comment Comment @relation(fields: [commentId], references: [id])
+  commentLiked  Boolean
+  comment       Comment @relation(fields: [commentId], references: [id])
 }
