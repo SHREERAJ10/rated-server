@@ -121,15 +121,17 @@ interface Post {
   createdAt: string;
   author: Author;
   postMedia: PostMedia;
-  rating: {
+  ratingScore: {
     score: number;
     total: number;
   };
   _count: {
     like: number;
     comment: number;
+    rating: number;
   };
   like: [];
+  rating: [];
 }
 
 export const getPost = async (req: Request, res: Response) => {
@@ -190,14 +192,21 @@ export const getPosts = async (req: Request, res: Response) => {
             id: true,
           },
         },
+        rating: {
+          where: {
+            ratedByUserId: id,
+          },
+          select: {
+            id: true,
+          },
+        },
         _count: {
-          select: { like: true, comment: true },
+          select: { like: true, comment: true, rating: true },
         },
       },
     );
 
     const postIds = posts.items.map((post: Post) => post.id);
-    // const isPostLikedByUser =
 
     const postRating = await postService.getPostRating(postIds);
 
@@ -206,7 +215,7 @@ export const getPosts = async (req: Request, res: Response) => {
         return rating.postId == post.id;
       });
 
-      post.rating =
+      const ratingScore =
         filteredRating.length != 0
           ? filteredRating.map((rating: Rating) => {
               return { score: Math.round(rating._avg.score) ?? 0, total: 10 };
@@ -219,14 +228,18 @@ export const getPosts = async (req: Request, res: Response) => {
         createdAt: post.createdAt,
         author: post.author,
         media: post.postMedia,
-        rating: post.rating,
         like: {
           count: post._count.like,
         },
         comment: {
           count: post._count.comment,
         },
+        ratingScore: {
+          count: post._count.rating,
+          data: ratingScore,
+        },
         isLikedByUser: post.like.length != 0 ? true : false,
+        isRatedByUser: post.rating.length != 0 ? true : false,
       };
     });
 
@@ -286,7 +299,6 @@ export const getComment = async (req: Request, res: Response) => {
 export const getPostLikers = async (req: Request, res: Response) => {
   try {
     const postId = req.params.postId as string;
-    console.log(postId);
     const postLikers = await postService.getPostLikers(postId);
 
     res.status(200).json({
