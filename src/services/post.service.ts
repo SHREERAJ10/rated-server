@@ -94,8 +94,17 @@ export const registerScore = async (
   postId: string,
   score: number,
 ) => {
-  const registeredScore = await prisma.rating.create({
-    data: {
+  const registeredScore = await prisma.rating.upsert({
+    where: {
+      ratedByUser: {
+        postId: postId,
+        ratedByUserId: ratedByUserId,
+      },
+    },
+    update: {
+      score: score,
+    },
+    create: {
       postId: postId,
       ratedByUserId: ratedByUserId,
       score: score,

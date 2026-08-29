@@ -1,17 +1,28 @@
-import express, { Router } from 'express';
-import { createPost, deleteLike, getComment, getPost, getPostLikers, getPosts, getUserPosts, registerComment, registerLike, registerScore } from '../controllers/post.controller.js';
+import express, { Router } from "express";
+import {
+  createPost,
+  deleteLike,
+  getComment,
+  getPost,
+  getPostLikers,
+  getPosts,
+  getUserPosts,
+  registerComment,
+  registerLike,
+  registerScore,
+} from "../controllers/post.controller.js";
 
-const router:Router = express.Router();
+const router: Router = express.Router();
 
 router.get("/:postId", getPost);
-router.post('/:postId/like', registerLike);
-router.delete('/:postId/unlike', deleteLike);
-router.post('/:postId/rate', registerScore);
-router.post('/:postId/comment', registerComment);
-router.get('/:postId/comment', getComment);
-router.get('/:postId/like', getPostLikers)
-router.get('/:username', getUserPosts);
-router.post('/', createPost);
-router.get('/', getPosts);
+router.post("/:postId/like", registerLike);
+router.delete("/:postId/unlike", deleteLike);
+router.put("/:postId/rate", registerScore);
+router.post("/:postId/comment", registerComment);
+router.get("/:postId/comment", getComment);
+router.get("/:postId/like", getPostLikers);
+router.get("/:username", getUserPosts);
+router.post("/", createPost);
+router.get("/", getPosts);
 
 export default router;
