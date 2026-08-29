@@ -124,6 +124,7 @@ interface Post {
   ratingScore: {
     score: number;
     total: number;
+    userRatingScore: number;
   };
   _count: {
     like: number;
@@ -198,6 +199,7 @@ export const getPosts = async (req: Request, res: Response) => {
           },
           select: {
             id: true,
+            score: true,
           },
         },
         _count: {
@@ -218,7 +220,8 @@ export const getPosts = async (req: Request, res: Response) => {
       const ratingScore =
         filteredRating.length != 0
           ? filteredRating.map((rating: Rating) => {
-              return { score: Math.round(rating._avg.score) ?? 0, total: 10 };
+              const score = Number(rating._avg.score.toFixed(1));
+              return { score: score ?? 0, total: 10 };
             })[0]
           : { score: 0, total: 10 };
 
@@ -237,6 +240,7 @@ export const getPosts = async (req: Request, res: Response) => {
         ratingScore: {
           count: post._count.rating,
           data: ratingScore,
+          userRatingScore: post.rating[0]?.score,
         },
         isLikedByUser: post.like.length != 0 ? true : false,
         isRatedByUser: post.rating.length != 0 ? true : false,
