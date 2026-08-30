@@ -289,3 +289,15 @@ export const getPost = async (id: string, postId: string) => {
 
   return post;
 };
+
+export const removeRating = async (id: string, postId: string) => {
+  const removeRating = await prisma.rating.delete({
+    where: {
+      ratedByUser: {
+        ratedByUserId: id,
+        postId: postId,
+      },
+    },
+  });
+  return removeRating;
+};

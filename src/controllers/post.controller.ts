@@ -386,3 +386,21 @@ export const getUserPosts = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, error: "internal server error!" });
   }
 };
+
+export const removeRating = async (req: Request, res: Response) => {
+  try {
+    const id = req.uid ?? "";
+    const postId = req.params.postId as string;
+    const removeRating = await postService.removeRating(id, postId);
+    res
+      .status(200)
+      .json({
+        success: true,
+        data: removeRating,
+        message: "Rating has been removed",
+      });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ success: false, error: "internal server error!" });
+  }
+};
