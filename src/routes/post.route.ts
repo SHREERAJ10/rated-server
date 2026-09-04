@@ -6,6 +6,7 @@ import {
   getPost,
   getPostLikers,
   getPosts,
+  getPostsCursor,
   getUserPosts,
   registerComment,
   registerLike,
@@ -25,6 +26,6 @@ router.get("/:postId/comment", getComment);
 router.get("/:postId/like", getPostLikers);
 router.get("/:username", getUserPosts);
 router.post("/", createPost);
-router.get("/", getPosts);
+router.get("/", getPostsCursor);
 
 export default router;

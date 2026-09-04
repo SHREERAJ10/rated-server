@@ -2,6 +2,10 @@ import type { Request, Response } from "express";
 import { Comment, Post, Score } from "../models/post.model.js";
 import * as postService from "../services/post.service.js";
 import { paginate } from "../utils/paginate.js";
+import {
+  cursorPagination,
+  type CursorPaginationParams,
+} from "../utils/cursorPagination.js";
 
 export const createPost = async (req: Request, res: Response) => {
   try {
@@ -257,6 +261,105 @@ export const getPosts = async (req: Request, res: Response) => {
   }
 };
 
+export const getPostsCursor = async (req: Request, res: Response) => {
+  try {
+    const id = req.uid ?? "";
+    const cursor = req.query.cursor;
+    const take = 5;
+    const model = "post";
+    const page = Number(req.query.page ?? 1);
+    const myCursor = cursor
+      ? {
+          id: cursor,
+        }
+      : null;
+    const cursorPaginationArgs: CursorPaginationParams = {
+      take: take,
+      model: model,
+      include: {
+        postMedia: true,
+        author: {
+          select: {
+            id: true,
+            displayName: true,
+            username: true,
+            pfpUrl: true,
+          },
+        },
+        like: {
+          where: {
+            likedByUserId: id,
+          },
+          select: {
+            id: true,
+          },
+        },
+        rating: {
+          where: {
+            ratedByUserId: id,
+          },
+          select: {
+            id: true,
+            score: true,
+          },
+        },
+        _count: {
+          select: { like: true, comment: true, rating: true },
+        },
+      },
+      cursor: myCursor,
+    };
+    const posts = await cursorPagination(cursorPaginationArgs);
+
+    const postIds = posts.items.map((post: Post) => post.id);
+
+    const postRating = await postService.getPostRating(postIds);
+
+    posts.items = posts.items.map((post: Post) => {
+      const filteredRating = postRating.filter((rating: Rating) => {
+        return rating.postId == post.id;
+      });
+
+      const ratingScore =
+        filteredRating.length != 0
+          ? filteredRating.map((rating: Rating) => {
+              const score = Number(rating._avg.score.toFixed(1));
+              return { score: score ?? 0, total: 10 };
+            })[0]
+          : { score: 0, total: 10 };
+
+      return {
+        id: post.id,
+        caption: post.caption,
+        createdAt: post.createdAt,
+        author: post.author,
+        media: post.postMedia,
+        like: {
+          count: post._count.like,
+        },
+        comment: {
+          count: post._count.comment,
+        },
+        ratingScore: {
+          count: post._count.rating,
+          data: ratingScore,
+          userRatingScore: post.rating[0]?.score,
+        },
+        isLikedByUser: post.like.length != 0 ? true : false,
+        isRatedByUser: post.rating.length != 0 ? true : false,
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      data: posts,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ success: false, error: "internal server error!" });
+  }
+};
+
 interface Commentor {
   id: string;
   displayName: string;
@@ -392,13 +495,11 @@ export const removeRating = async (req: Request, res: Response) => {
     const id = req.uid ?? "";
     const postId = req.params.postId as string;
     const removeRating = await postService.removeRating(id, postId);
-    res
-      .status(200)
-      .json({
-        success: true,
-        data: removeRating,
-        message: "Rating has been removed",
-      });
+    res.status(200).json({
+      success: true,
+      data: removeRating,
+      message: "Rating has been removed",
+    });
   } catch (err) {
     console.log(err);
     res.status(500).json({ success: false, error: "internal server error!" });
