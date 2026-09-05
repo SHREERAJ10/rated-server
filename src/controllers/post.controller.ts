@@ -29,6 +29,7 @@ export const registerLike = async (req: Request, res: Response) => {
     const id = req.uid ?? "";
     const postId = req.params.postId as string;
     const registeredLike = await postService.registerLike(id, postId);
+    await postService.scorePost(postId);
     res.status(200).json({
       success: true,
       message: "Post Liked",
@@ -135,6 +136,7 @@ interface Post {
     comment: number;
     rating: number;
   };
+  feedScore: number;
   like: [];
   rating: [];
 }
@@ -264,13 +266,13 @@ export const getPosts = async (req: Request, res: Response) => {
 export const getPostsCursor = async (req: Request, res: Response) => {
   try {
     const id = req.uid ?? "";
-    const cursor = req.query.cursor;
+    const postId = req.query.cursor;
     const take = 5;
     const model = "post";
-    const page = Number(req.query.page ?? 1);
-    const myCursor = cursor
+    const myCursor = postId
       ? {
-          id: cursor,
+          id: postId,
+          feedScore: Number(req.query.feedScore),
         }
       : null;
     const cursorPaginationArgs: CursorPaginationParams = {
@@ -308,6 +310,9 @@ export const getPostsCursor = async (req: Request, res: Response) => {
         },
       },
       cursor: myCursor,
+      orderBy: {
+        feedScore: "desc",
+      },
     };
     const posts = await cursorPagination(cursorPaginationArgs);
 
@@ -347,6 +352,7 @@ export const getPostsCursor = async (req: Request, res: Response) => {
         },
         isLikedByUser: post.like.length != 0 ? true : false,
         isRatedByUser: post.rating.length != 0 ? true : false,
+        feedScore: post.feedScore,
       };
     });
 

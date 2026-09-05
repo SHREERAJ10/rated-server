@@ -27,11 +27,15 @@ export const cursorPagination = async ({
     orderBy: orderBy || {},
   });
 
-  const currCursor = items.at(-1).id;
+  const postId = items.at(-1).id;
+  const feedScore = items.at(-1).feedScore;
 
   return {
     items: items,
-    currCursor: currCursor,
+    currCursor: {
+      id: postId,
+      feedScore: feedScore,
+    },
     prevCursor: cursor,
   };
 };
