@@ -29,6 +29,7 @@ model Post {
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
   author    User        @relation(fields: [authorId], references: [id])
+  feedScore Float @default(0)
   like      Like[]
   postMedia PostMedia[]
   comment   Comment[]
