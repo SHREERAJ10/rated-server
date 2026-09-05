@@ -1,7 +1,11 @@
+import type { Prisma } from "@prisma/client/extension";
 import { prisma } from "../../db.js";
 import { getPostRating } from "../services/post.service.js";
 
-export const FeedRank = async (postId: string) => {
+export const FeedRank = async (
+  postId: string,
+  db: Prisma.TransactionClient | typeof prisma = prisma,
+) => {
   //Feed Score Range: 0 - 100
 
   // Weights for different metrics
@@ -10,7 +14,7 @@ export const FeedRank = async (postId: string) => {
   const RATING_SCORE_WEIGHT = 0.3;
   const LIKE_WEIGHT = 0.1;
 
-  const postData = await prisma.post.findUnique({
+  const postData = await db.post.findUnique({
     where: {
       id: postId,
     },
@@ -34,7 +38,12 @@ export const FeedRank = async (postId: string) => {
     ),
   ); //age in hours
 
-  const postRating = await getPostRating([postId]);
+  let ratingScore = 0;
+  
+  if (postData._count.rating !== 0) {
+    const postRating = await getPostRating([postId]);
+    ratingScore = Number(postRating[0]._avg.score.toFixed(1)) * 10;
+  }
 
   //normalize metrics into range 0 - 100
 
@@ -45,11 +54,11 @@ export const FeedRank = async (postId: string) => {
       rating: Math.log(postData._count.rating + 1),
     },
     value: {
-      rating: Number(postRating[0]._avg.score.toFixed(1)) * 10,
+      rating: ratingScore,
     },
   };
 
-  const baseScore = Number(
+  let baseScore = Number(
     (
       metrics.count.like * LIKE_WEIGHT +
       metrics.count.comment * COMMENT_WEIGHT +
@@ -58,6 +67,9 @@ export const FeedRank = async (postId: string) => {
     ).toFixed(1),
   );
 
+  if (baseScore === 0) {
+    baseScore = 1; // Ensure a minimum base score to avoid zero feed score
+  }
   const decay = 1 / (postAge + 2) ** 1.8;
 
   const feedScore = baseScore * decay;
