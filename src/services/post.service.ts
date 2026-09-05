@@ -1,6 +1,7 @@
 import type { Prisma } from "@prisma/client/extension";
 import { prisma } from "../../db.js";
 import { paginate } from "../utils/paginate.js";
+import { FeedRank } from "../utils/FeedRank.js";
 
 export const createPost = async (
   authorId: string,
@@ -23,6 +24,15 @@ export const createPost = async (
             mediaUrl: mediumUrl,
           };
         }),
+      });
+      const feedScore = await FeedRank(postId, tx);
+      await tx.post.update({
+        where: {
+          id: postId,
+        },
+        data: {
+          feedScore: feedScore,
+        },
       });
 
       postData.postMedia = postMedia;
@@ -300,4 +310,17 @@ export const removeRating = async (id: string, postId: string) => {
     },
   });
   return removeRating;
+};
+
+export const scorePost = async (postId: string) => {
+  const feedScore = await FeedRank(postId);
+  const scoredPost = await prisma.post.update({
+    where: {
+      id: postId,
+    },
+    data: {
+      feedScore: feedScore,
+    },
+  });
+  return scoredPost;
 };
