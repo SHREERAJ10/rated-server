@@ -23,19 +23,22 @@ export const cursorPagination = async ({
     where: where || {},
     include: include || {},
     take: take,
+    skip: 1,
     cursor: cursor ?? undefined,
     orderBy: orderBy || {},
   });
 
-  const postId = items.at(-1).id;
-  const feedScore = items.at(-1).feedScore;
+  const postId = items.at(-1)?.id;
+  const feedScore = items.at(-1)?.feedScore;
 
   return {
     items: items,
-    currCursor: {
-      id: postId,
-      feedScore: feedScore,
-    },
-    prevCursor: cursor,
+    cursor:
+      items.length > 0
+        ? {
+            id: postId,
+            feedScore: feedScore,
+          }
+        : null,
   };
 };
