@@ -313,9 +313,14 @@ export const getPostsCursor = async (req: Request, res: Response) => {
         },
       },
       cursor: myCursor,
-      orderBy: {
-        feedScore: "desc",
-      },
+      orderBy: [
+        {
+          feedScore: "desc",
+        },
+        {
+          createdAt:"desc"
+        }
+      ],
     };
     const posts = await cursorPagination(cursorPaginationArgs);
 
