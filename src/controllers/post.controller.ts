@@ -6,11 +6,13 @@ import {
   cursorPagination,
   type CursorPaginationParams,
 } from "../utils/cursorPagination.js";
+import { rollbackMedia } from "../utils/rollbackMedia.js";
 
 export const createPost = async (req: Request, res: Response) => {
+  const postData = req.body;
   try {
     const authorId = req.uid ?? "";
-    const { caption, media } = Post.parse(req.body);
+    const { caption, media } = Post.parse(postData);
     const post = await postService.createPost(authorId, caption ?? "", media);
 
     res.status(200).json({
@@ -19,6 +21,12 @@ export const createPost = async (req: Request, res: Response) => {
       data: post,
     });
   } catch (err) {
+    const { media } = postData;
+    const mediaToRollback = media?.map(
+      (medium: { publicId: string }) => medium.publicId,
+    );
+    const response = await rollbackMedia(mediaToRollback);
+    console.log("Rollback response:", response);
     console.log(err);
     res.status(500).json({ success: false, error: "internal server error!" });
   }
@@ -318,8 +326,8 @@ export const getPostsCursor = async (req: Request, res: Response) => {
           feedScore: "desc",
         },
         {
-          createdAt:"desc"
-        }
+          createdAt: "desc",
+        },
       ],
     };
     const posts = await cursorPagination(cursorPaginationArgs);

@@ -6,7 +6,7 @@ import { FeedRank } from "../utils/FeedRank.js";
 export const createPost = async (
   authorId: string,
   caption: string,
-  media: string[],
+  media: { url: string }[],
 ) => {
   const post = await prisma.$transaction(
     async (tx: Prisma.TransactionClient) => {
@@ -18,10 +18,10 @@ export const createPost = async (
       });
       const postId = postData.id;
       const postMedia = await tx.postMedia.createManyAndReturn({
-        data: media.map((mediumUrl) => {
+        data: media.map((medium) => {
           return {
             postId: postId,
-            mediaUrl: mediumUrl,
+            mediaUrl: medium.url,
           };
         }),
       });
