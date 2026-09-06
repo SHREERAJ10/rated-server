@@ -23,7 +23,7 @@ export const cursorPagination = async ({
     where: where || {},
     include: include || {},
     take: take,
-    skip: 1,
+    skip: cursor ? 1 : 0,
     cursor: cursor ?? undefined,
     orderBy: orderBy || {},
   });
