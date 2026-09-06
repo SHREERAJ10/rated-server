@@ -46,6 +46,7 @@ export const deleteLike = async (req: Request, res: Response) => {
     const id = req.uid ?? "";
     const postId = req.params.postId as string;
     const deletedLike = await postService.deleteLike(id, postId);
+    await postService.scorePost(postId);
     res.status(200).json({
       success: true,
       message: "Post Unliked",
@@ -63,6 +64,7 @@ export const registerScore = async (req: Request, res: Response) => {
     const postId = req.params.postId as string;
     const { score } = Score.parse(req.body);
     const registeredScore = await postService.registerScore(id, postId, score);
+    await postService.scorePost(postId);
     res.status(200).json({
       success: true,
       message: "Post rated",
@@ -85,6 +87,7 @@ export const registerComment = async (req: Request, res: Response) => {
       comment,
     );
     const commentedByUser = await postService.getUserData(id);
+    await postService.scorePost(postId);
     const response = {
       ...registeredComment,
       commentor: { ...commentedByUser },
@@ -501,6 +504,7 @@ export const removeRating = async (req: Request, res: Response) => {
     const id = req.uid ?? "";
     const postId = req.params.postId as string;
     const removeRating = await postService.removeRating(id, postId);
+    await postService.scorePost(postId);
     res.status(200).json({
       success: true,
       data: removeRating,
