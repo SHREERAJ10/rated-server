@@ -43,21 +43,38 @@ export const createPost = async (
 };
 
 export const registerLike = async (likedByUserId: string, postId: string) => {
-  const [registeredLike, totalLikeCount] = await prisma.$transaction([
-    prisma.like.create({
-      data: {
+  const response = await prisma.$transaction(
+    async (tx: Prisma.TransactionClient) => {
+      const registeredLike = await tx.like.create({
+        data: {
+          postId: postId,
+          likedByUserId: likedByUserId,
+          postLiked: true,
+        },
+      });
+      const totalLikeCount = await tx.like.count({
+        where: {
+          postId: postId,
+        },
+      });
+      const post = await scorePost(postId, tx);
+      const authorId = post.authorId;
+
+      const notification = {
+        actorId: likedByUserId,
+        recipientId: authorId,
         postId: postId,
-        likedByUserId: likedByUserId,
-        postLiked: true,
-      },
-    }),
-    prisma.like.count({
-      where: {
-        postId: postId,
-      },
-    }),
-  ]);
-  return { ...registeredLike, likeCount: totalLikeCount };
+        type: NotificationType.Like,
+      };
+
+      await storeNotification(tx, notification);
+      return {
+        ...registeredLike,
+        likeCount: totalLikeCount,
+      };
+    },
+  );
+  return response;
 };
 
 export const getUserData = async (userId: string) => {
@@ -76,27 +93,28 @@ export const getUserData = async (userId: string) => {
 };
 
 export const deleteLike = async (likedByUserId: string, postId: string) => {
-  const [deletedLike, totalLikeCount] = await prisma.$transaction([
-    prisma.like.delete({
-      where: {
-        likedUser: {
-          postId: postId,
-          likedByUserId: likedByUserId,
+  const response = await prisma.$transaction(
+    async (tx: Prisma.TransactionClient) => {
+      const deletedLike = tx.like.delete({
+        where: {
+          likedUser: {
+            postId: postId,
+            likedByUserId: likedByUserId,
+          },
         },
-      },
-    }),
-    prisma.like.count({
-      where: {
-        postId: postId,
-      },
-    }),
-  ]);
-  return {
-    id: deletedLike.id,
-    postId: deletedLike.postId,
-    postLiked: false,
-    likeCount: totalLikeCount,
-  };
+      });
+      const totalLikeCount = await tx.like.count({
+        where: {
+          postId: postId,
+        },
+      });
+
+      await scorePost(postId, tx);
+
+      return { ...deletedLike, likeCount: totalLikeCount };
+    },
+  );
+  return response;
 };
 
 export const registerScore = async (
@@ -312,7 +330,10 @@ export const removeRating = async (id: string, postId: string) => {
   return removeRating;
 };
 
-export const scorePost = async (postId: string) => {
+export const scorePost = async (
+  postId: string,
+  prisma?: Prisma.TransactionClient,
+) => {
   const feedScore = await FeedRank(postId);
   const scoredPost = await prisma.post.update({
     where: {
@@ -323,4 +344,26 @@ export const scorePost = async (postId: string) => {
     },
   });
   return scoredPost;
+};
+
+export enum NotificationType {
+  Like = "LIKE",
+  Comment = "COMMENT",
+  Rate = "RATE",
+}
+
+interface NotificationDetails {
+  recipientId: string;
+  actorId: string;
+  postId: string;
+  type: NotificationType;
+}
+
+export const storeNotification = async (
+  db: Prisma.TransactionClient,
+  notification: NotificationDetails,
+) => {
+  await db.notification.create({
+    data: notification,
+  });
 };
