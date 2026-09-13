@@ -5,8 +5,8 @@ export interface CursorPaginationParams {
   orderBy?: object;
   model: string;
   where?: object;
-  include: object;
-  cursor: object;
+  include?: object;
+  cursor: object | null;
 }
 
 export const cursorPagination = async ({
@@ -28,16 +28,14 @@ export const cursorPagination = async ({
     orderBy: orderBy || {},
   });
 
-  const postId = items.at(-1)?.id;
-  const feedScore = items.at(-1)?.feedScore;
+  const nextCursor = items.at(-1)?.id;
 
   return {
     items: items,
     cursor:
       items.length > 0
         ? {
-            id: postId,
-            feedScore: feedScore,
+            id: nextCursor,
           }
         : null,
   };
