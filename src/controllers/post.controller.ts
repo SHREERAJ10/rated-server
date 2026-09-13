@@ -8,6 +8,40 @@ import {
 } from "../utils/cursorPagination.js";
 import { rollbackMedia } from "../utils/rollbackMedia.js";
 
+export const getNotification = async (req: Request, res: Response) => {
+  try {
+    const id = req.uid ?? "";
+    const notificationId = req.query.notificationId;
+    const cursor = notificationId
+      ? {
+          id: notificationId,
+        }
+      : null;
+
+    const notifications = await cursorPagination({
+      model: "notification",
+      take: 2,
+      where: {
+        recipientId: id,
+      },
+      cursor: cursor,
+      orderBy: [
+        {
+          createdAt: "desc",
+        },
+      ],
+    });
+
+    res.status(200).json({
+      success: true,
+      data: notifications,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ success: false, error: "internal server error!" });
+  }
+};
+
 export const createPost = async (req: Request, res: Response) => {
   const postData = req.body;
   try {
@@ -37,7 +71,7 @@ export const registerLike = async (req: Request, res: Response) => {
     const id = req.uid ?? "";
     const postId = req.params.postId as string;
     const registeredLike = await postService.registerLike(id, postId);
-    await postService.scorePost(postId);
+
     res.status(200).json({
       success: true,
       message: "Post Liked",
@@ -54,7 +88,6 @@ export const deleteLike = async (req: Request, res: Response) => {
     const id = req.uid ?? "";
     const postId = req.params.postId as string;
     const deletedLike = await postService.deleteLike(id, postId);
-    await postService.scorePost(postId);
     res.status(200).json({
       success: true,
       message: "Post Unliked",
@@ -152,34 +185,34 @@ interface Post {
   rating: [];
 }
 
-export const getPost = async (req: Request, res: Response) => {
-  try {
-    const postId = req.params.postId as string;
-    const id = req.uid ?? "";
-    const post = await postService.getPost(id, postId);
-    const postRating = await postService.getPostRating([postId]);
+// export const getPost = async (req: Request, res: Response) => {
+//   try {
+//     const postId = req.params.postId as string;
+//     const id = req.uid ?? "";
+//     const post = await postService.getPost(id, postId);
+//     const postRating = await postService.getPostRating([postId]);
 
-    const response = {
-      id: post.id,
-      caption: post.caption,
-      createdAt: post.createdAt,
-      author: post.author,
-      media: post.postMedia,
-      rating: { score: Math.round(postRating[0]?._avg?.score) || 0, total: 10 },
-      like: {
-        count: post._count.like,
-      },
-      comment: {
-        count: post._count.comment,
-      },
-      isLikedByUser: post.like.length != 0 ? true : false,
-    };
-    res.status(200).json({ success: true, data: response });
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ success: false, error: "internal server error!" });
-  }
-};
+//     const response = {
+//       id: post.id,
+//       caption: post.caption,
+//       createdAt: post.createdAt,
+//       author: post.author,
+//       media: post.postMedia,
+//       rating: { score: Math.round(postRating[0]?._avg?.score) || 0, total: 10 },
+//       like: {
+//         count: post._count.like,
+//       },
+//       comment: {
+//         count: post._count.comment,
+//       },
+//       isLikedByUser: post.like.length != 0 ? true : false,
+//     };
+//     res.status(200).json({ success: true, data: response });
+//   } catch (err) {
+//     console.log(err);
+//     res.status(500).json({ success: false, error: "internal server error!" });
+//   }
+// };
 
 export const getPosts = async (req: Request, res: Response) => {
   try {
@@ -277,13 +310,12 @@ export const getPosts = async (req: Request, res: Response) => {
 export const getPostsCursor = async (req: Request, res: Response) => {
   try {
     const id = req.uid ?? "";
-    const postId = req.query.cursor;
+    const postId = req.query.cursor as string;
     const take = 5;
     const model = "post";
     const myCursor = postId
       ? {
           id: postId,
-          feedScore: Number(req.query.feedScore),
         }
       : null;
     const cursorPaginationArgs: CursorPaginationParams = {

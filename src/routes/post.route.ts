@@ -3,9 +3,10 @@ import {
   createPost,
   deleteLike,
   getComment,
-  getPost,
+  getNotification,
+  // getPost,
   getPostLikers,
-  getPosts,
+  // getPosts,
   getPostsCursor,
   getUserPosts,
   registerComment,
@@ -16,7 +17,8 @@ import {
 
 const router: Router = express.Router();
 
-router.get("/:postId", getPost);
+// router.get("/:postId", getPost);
+router.get("/notification", getNotification);
 router.post("/:postId/like", registerLike);
 router.delete("/:postId/unlike", deleteLike);
 router.put("/:postId/rate", registerScore);
