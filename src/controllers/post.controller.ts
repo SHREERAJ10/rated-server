@@ -8,6 +8,46 @@ import {
 } from "../utils/cursorPagination.js";
 import { rollbackMedia } from "../utils/rollbackMedia.js";
 
+export const getNotificationStatus = async (req: Request, res: Response) => {
+  try {
+    const id = req.uid ?? "";
+    res.writeHead(200, {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    });
+    const isNotificationUnread = await postService.isUnreadNotification(id);
+    const payload = isNotificationUnread
+      ? {
+          isNotificationUnread: true,
+        }
+      : {
+          isNotificationUnread: false,
+        };
+    res.write(`data: ${JSON.stringify(payload)}\n\n`);
+
+    const intervalId = setInterval(async () => {
+      const isNotificationUnread = await postService.isUnreadNotification(id);
+      const payload = isNotificationUnread
+        ? {
+            isNotificationUnread: true,
+          }
+        : {
+            isNotificationUnread: false,
+          };
+      res.write(`data: ${JSON.stringify(payload)}\n\n`);
+    }, 1000 * 30);
+
+    req.on("close", () => {
+      clearInterval(intervalId);
+      res.end();
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ success: false, error: "internal server error!" });
+  }
+};
+
 export const getNotification = async (req: Request, res: Response) => {
   try {
     const id = req.uid ?? "";

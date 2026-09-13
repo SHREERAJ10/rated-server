@@ -4,6 +4,7 @@ import {
   deleteLike,
   getComment,
   getNotification,
+  getNotificationStatus,
   // getPost,
   getPostLikers,
   // getPosts,
@@ -19,6 +20,7 @@ const router: Router = express.Router();
 
 // router.get("/:postId", getPost);
 router.get("/notification", getNotification);
+router.get('/notification/status', getNotificationStatus);
 router.post("/:postId/like", registerLike);
 router.delete("/:postId/unlike", deleteLike);
 router.put("/:postId/rate", registerScore);

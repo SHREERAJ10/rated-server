@@ -3,6 +3,16 @@ import { prisma } from "../../db.js";
 import { paginate } from "../utils/paginate.js";
 import { FeedRank } from "../utils/FeedRank.js";
 
+export const isUnreadNotification = async (userId: string) => {
+  const notifications = await prisma.notification.findFirst({
+    where: {
+      recipientId: userId,
+      isRead: false,
+    },
+  });
+  return notifications;
+};
+
 export const createPost = async (
   authorId: string,
   caption: string,
