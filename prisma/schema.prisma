@@ -29,7 +29,7 @@ model Post {
   createdAt DateTime    @default(now())
   updatedAt DateTime    @updatedAt
   author    User        @relation(fields: [authorId], references: [id])
-  feedScore Float @default(0)
+  feedScore Float       @default(0)
   like      Like[]
   postMedia PostMedia[]
   comment   Comment[]
@@ -79,4 +79,20 @@ model CommentLike {
   likedByUserId String
   commentLiked  Boolean
   comment       Comment @relation(fields: [commentId], references: [id])
+}
+
+enum NotificationType {
+  LIKE
+  COMMENT
+  RATE
+}
+
+model Notification {
+  id          String           @id @default(uuid())
+  recipientId String
+  actorId     String
+  postId      String
+  isRead      Boolean          @default(false)
+  type        NotificationType
+  createdAt   DateTime         @default(now())
 }
