@@ -145,7 +145,6 @@ export const registerScore = async (req: Request, res: Response) => {
     const postId = req.params.postId as string;
     const { score } = Score.parse(req.body);
     const registeredScore = await postService.registerScore(id, postId, score);
-    await postService.scorePost(postId);
     res.status(200).json({
       success: true,
       message: "Post rated",
@@ -167,16 +166,11 @@ export const registerComment = async (req: Request, res: Response) => {
       postId,
       comment,
     );
-    const commentedByUser = await postService.getUserData(id);
-    await postService.scorePost(postId);
-    const response = {
-      ...registeredComment,
-      commentor: { ...commentedByUser },
-    };
+
     res.status(200).json({
       success: true,
       message: "comment added successfully",
-      data: response,
+      data: registeredComment,
     });
   } catch (err) {
     console.log(err);

@@ -132,23 +132,40 @@ export const registerScore = async (
   postId: string,
   score: number,
 ) => {
-  const registeredScore = await prisma.rating.upsert({
-    where: {
-      ratedByUser: {
+  const response = await prisma.$transaction(
+    async (tx: Prisma.TransactionClient) => {
+      const registeredRating = await tx.rating.upsert({
+        where: {
+          ratedByUser: {
+            postId: postId,
+            ratedByUserId: ratedByUserId,
+          },
+        },
+        update: {
+          score: score,
+        },
+        create: {
+          postId: postId,
+          ratedByUserId: ratedByUserId,
+          score: score,
+        },
+      });
+      const post = await scorePost(postId, tx);
+      const authorId = post.authorId;
+
+      const notification = {
+        actorId: ratedByUserId,
+        recipientId: authorId,
         postId: postId,
-        ratedByUserId: ratedByUserId,
-      },
+        type: NotificationType.Rate,
+      };
+
+      await storeNotification(tx, notification);
+      return registeredRating;
     },
-    update: {
-      score: score,
-    },
-    create: {
-      postId: postId,
-      ratedByUserId: ratedByUserId,
-      score: score,
-    },
-  });
-  return registeredScore;
+  );
+
+  return response;
 };
 
 export const registerComment = async (
@@ -156,13 +173,44 @@ export const registerComment = async (
   postId: string,
   comment: string,
 ) => {
-  const registeredComment = await prisma.comment.create({
-    data: {
-      postId: postId,
-      commentedByUserId: commentedByUserId,
-      comment: comment,
+
+  const registeredComment = await prisma.$transaction(
+    async (tx: Prisma.TransactionClient) => {
+      const registeredComment = await tx.comment.create({
+        data: {
+          postId: postId,
+          commentedByUserId: commentedByUserId,
+          comment: comment,
+        },
+      });
+      const commentor = tx.user.findUnique({
+        where: {
+          id: commentedByUserId,
+        },
+        select: {
+          id: true,
+          displayName: true,
+          username: true,
+          pfpUrl: true,
+        },
+      });
+      const post = await scorePost(postId, tx);
+      const authorId = post.authorId;
+
+      const notification = {
+        actorId: commentedByUserId,
+        recipientId: authorId,
+        postId: postId,
+        type: NotificationType.Comment,
+      };
+
+      await storeNotification(tx, notification);
+      return {
+        ...registeredComment,
+        commentor: { ...commentor },
+      };
     },
-  });
+  );
   return registeredComment;
 };
 
@@ -342,10 +390,10 @@ export const removeRating = async (id: string, postId: string) => {
 
 export const scorePost = async (
   postId: string,
-  prisma?: Prisma.TransactionClient,
+  db: Prisma.TransactionClient,
 ) => {
-  const feedScore = await FeedRank(postId);
-  const scoredPost = await prisma.post.update({
+  const feedScore = await FeedRank(postId, db);
+  const scoredPost = await db.post.update({
     where: {
       id: postId,
     },
