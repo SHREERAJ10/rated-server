@@ -2,11 +2,10 @@ import express, { Router } from "express";
 import {
   createPost,
   deleteLike,
-  getComment,
+  getComments,
   getNotification,
   getNotificationStatus,
   getPostLikers,
-  // getPosts,
   getPostsCursor,
   getSinglePost,
   getUserPosts,
@@ -25,7 +24,7 @@ router.delete("/:postId/unlike", deleteLike);
 router.put("/:postId/rate", registerScore);
 router.delete("/:postId/rate", removeRating);
 router.post("/:postId/comment", registerComment);
-router.get("/:postId/comment", getComment);
+router.get("/:postId/comment", getComments);
 router.get("/:postId/like", getPostLikers);
 router.get("/:postId", getSinglePost);
 router.get("/:username", getUserPosts);

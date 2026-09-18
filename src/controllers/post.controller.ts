@@ -248,98 +248,98 @@ export const getSinglePost = async (req: Request, res: Response) => {
   }
 };
 
-export const getPosts = async (req: Request, res: Response) => {
-  try {
-    const id = req.uid ?? "";
-    const pageSize = 5;
-    const modelName = "post";
-    const page = Number(req.query.page ?? 1);
-    const posts = await paginate(
-      page,
-      pageSize,
-      modelName,
-      {},
-      {
-        postMedia: true,
-        author: {
-          select: {
-            id: true,
-            displayName: true,
-            username: true,
-            pfpUrl: true,
-          },
-        },
-        like: {
-          where: {
-            likedByUserId: id,
-          },
-          select: {
-            id: true,
-          },
-        },
-        rating: {
-          where: {
-            ratedByUserId: id,
-          },
-          select: {
-            id: true,
-            score: true,
-          },
-        },
-        _count: {
-          select: { like: true, comment: true, rating: true },
-        },
-      },
-    );
+// export const getPosts = async (req: Request, res: Response) => {
+//   try {
+//     const id = req.uid ?? "";
+//     const pageSize = 5;
+//     const modelName = "post";
+//     const page = Number(req.query.page ?? 1);
+//     const posts = await paginate(
+//       page,
+//       pageSize,
+//       modelName,
+//       {},
+//       {
+//         postMedia: true,
+//         author: {
+//           select: {
+//             id: true,
+//             displayName: true,
+//             username: true,
+//             pfpUrl: true,
+//           },
+//         },
+//         like: {
+//           where: {
+//             likedByUserId: id,
+//           },
+//           select: {
+//             id: true,
+//           },
+//         },
+//         rating: {
+//           where: {
+//             ratedByUserId: id,
+//           },
+//           select: {
+//             id: true,
+//             score: true,
+//           },
+//         },
+//         _count: {
+//           select: { like: true, comment: true, rating: true },
+//         },
+//       },
+//     );
 
-    const postIds = posts.items.map((post: Post) => post.id);
+//     const postIds = posts.items.map((post: Post) => post.id);
 
-    const postRating = await postService.getPostRating(postIds);
+//     const postRating = await postService.getPostRating(postIds);
 
-    posts.items = posts.items.map((post: Post) => {
-      const filteredRating = postRating.filter((rating: Rating) => {
-        return rating.postId == post.id;
-      });
+//     posts.items = posts.items.map((post: Post) => {
+//       const filteredRating = postRating.filter((rating: Rating) => {
+//         return rating.postId == post.id;
+//       });
 
-      const ratingScore =
-        filteredRating.length != 0
-          ? filteredRating.map((rating: Rating) => {
-              const score = Number(rating._avg.score.toFixed(1));
-              return { score: score ?? 0, total: 10 };
-            })[0]
-          : { score: 0, total: 10 };
+//       const ratingScore =
+//         filteredRating.length != 0
+//           ? filteredRating.map((rating: Rating) => {
+//               const score = Number(rating._avg.score.toFixed(1));
+//               return { score: score ?? 0, total: 10 };
+//             })[0]
+//           : { score: 0, total: 10 };
 
-      return {
-        id: post.id,
-        caption: post.caption,
-        createdAt: post.createdAt,
-        author: post.author,
-        media: post.postMedia,
-        like: {
-          count: post._count.like,
-        },
-        comment: {
-          count: post._count.comment,
-        },
-        ratingScore: {
-          count: post._count.rating,
-          data: ratingScore,
-          userRatingScore: post.rating[0]?.score,
-        },
-        isLikedByUser: post.like.length != 0 ? true : false,
-        isRatedByUser: post.rating.length != 0 ? true : false,
-      };
-    });
+//       return {
+//         id: post.id,
+//         caption: post.caption,
+//         createdAt: post.createdAt,
+//         author: post.author,
+//         media: post.postMedia,
+//         like: {
+//           count: post._count.like,
+//         },
+//         comment: {
+//           count: post._count.comment,
+//         },
+//         ratingScore: {
+//           count: post._count.rating,
+//           data: ratingScore,
+//           userRatingScore: post.rating[0]?.score,
+//         },
+//         isLikedByUser: post.like.length != 0 ? true : false,
+//         isRatedByUser: post.rating.length != 0 ? true : false,
+//       };
+//     });
 
-    res.status(200).json({
-      success: true,
-      data: posts,
-    });
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ success: false, error: "internal server error!" });
-  }
-};
+//     res.status(200).json({
+//       success: true,
+//       data: posts,
+//     });
+//   } catch (err) {
+//     console.log(err);
+//     res.status(500).json({ success: false, error: "internal server error!" });
+//   }
+// };
 
 export const getPostsCursor = async (req: Request, res: Response) => {
   try {
@@ -462,28 +462,79 @@ interface Comment {
   commentor: Commentor;
 }
 
-export const getComment = async (req: Request, res: Response) => {
+// export const getComment = async (req: Request, res: Response) => {
+//   try {
+//     const postId = req.params.postId as string;
+//     const comments = await postService.getComment(postId);
+//     const commentorIds: [string] = comments.items.map(
+//       (comment: Comment) => comment.commentedByUserId,
+//     );
+//     const commentors = await postService.getCommentors(commentorIds);
+
+//     comments.items = comments.items.map((comment: Comment) => {
+//       comment.commentor = commentors.filter((commentor: Commentor) => {
+//         return commentor.id == comment.commentedByUserId;
+//       })[0];
+//       return {
+//         ...comment,
+//         commentor: comment.commentor,
+//       };
+//     });
+
+//     res.status(200).json({
+//       success: true,
+//       data: comments,
+//     });
+//   } catch (err) {
+//     console.log(err);
+//     res.status(500).json({ success: false, error: "internal server error!" });
+//   }
+// };
+
+export const getComments = async (req: Request, res: Response) => {
   try {
     const postId = req.params.postId as string;
-    const comments = await postService.getComment(postId);
+    const cursor = req.query.cursor
+      ? {
+          id: req.query.cursor,
+        }
+      : null;
+    const paginationParams = {
+      take: 5,
+      model: "comment",
+      where: {
+        postId: postId,
+      },
+      cursor: cursor,
+      orderBy: [
+        {
+          createdAt: "desc",
+        },
+        {
+          id: "desc",
+        },
+      ],
+    };
+    const comments = await cursorPagination(paginationParams);
     const commentorIds: [string] = comments.items.map(
       (comment: Comment) => comment.commentedByUserId,
     );
     const commentors = await postService.getCommentors(commentorIds);
-
-    comments.items = comments.items.map((comment: Comment) => {
-      comment.commentor = commentors.filter((commentor: Commentor) => {
-        return commentor.id == comment.commentedByUserId;
-      })[0];
-      return {
-        ...comment,
-        commentor: comment.commentor,
-      };
-    });
-
+    const response = {
+      ...comments,
+      items: comments.items.map((comment: Comment) => {
+        comment.commentor = commentors.filter((commentor: Commentor) => {
+          return commentor.id == comment.commentedByUserId;
+        })[0];
+        return {
+          ...comment,
+          commentor: comment.commentor,
+        };
+      }),
+    };
     res.status(200).json({
       success: true,
-      data: comments,
+      data: response,
     });
   } catch (err) {
     console.log(err);
