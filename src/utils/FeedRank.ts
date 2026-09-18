@@ -39,9 +39,8 @@ export const FeedRank = async (
   ); //age in hours
 
   let ratingScore = 0;
-  
   if (postData._count.rating !== 0) {
-    const postRating = await getPostRating([postId]);
+    const postRating = await getPostRating([postId], db);
     ratingScore = Number(postRating[0]._avg.score.toFixed(1)) * 10;
   }
 

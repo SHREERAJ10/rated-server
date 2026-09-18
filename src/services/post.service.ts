@@ -150,6 +150,7 @@ export const registerScore = async (
           score: score,
         },
       });
+      console.log(registeredRating);
       const post = await scorePost(postId, tx);
       const authorId = post.authorId;
 
@@ -254,8 +255,8 @@ export const getLikeCountOfEachPost = async (postIds: [string]) => {
   return likeCount;
 };
 
-export const getPostRating = async (postIds: [string]) => {
-  const postRating = await prisma.rating.groupBy({
+export const getPostRating = async (postIds: [string], db: Prisma.TransactionClient | typeof prisma = prisma) => {
+  const postRating = await db.rating.groupBy({
     by: ["postId"],
     where: {
       postId: {
@@ -264,24 +265,25 @@ export const getPostRating = async (postIds: [string]) => {
     },
     _avg: { score: true },
   });
+  console.log("rating = ", postRating);
   return postRating;
 };
 
-export const getComment = async (postId: string) => {
-  const page = 1;
-  const pageSize = 10;
-  const model = "comment";
-  const comments = await paginate(
-    page,
-    pageSize,
-    model,
-    {
-      postId: postId,
-    },
-    {},
-  );
-  return comments;
-};
+// export const getComment = async (postId: string) => {
+//   const page = 1;
+//   const pageSize = 10;
+//   const model = "comment";
+//   const comments = await paginate(
+//     page,
+//     pageSize,
+//     model,
+//     {
+//       postId: postId,
+//     },
+//     {},
+//   );
+//   return comments;
+// };
 
 export const getCommentors = async (commentorIds: [string]) => {
   const commentors = await prisma.user.findMany({
