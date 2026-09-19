@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client/extension";
 import { prisma } from "../../db.js";
 
 export interface CursorPaginationParams {
@@ -9,15 +10,16 @@ export interface CursorPaginationParams {
   cursor: object | null;
 }
 
-export const cursorPagination = async ({
-  take,
-  orderBy,
-  model,
-  where,
-  include,
-  cursor,
-}: CursorPaginationParams) => {
-  const db = prisma[model];
+export const cursorPagination = async (
+  { take, orderBy, model, where, include, cursor }: CursorPaginationParams,
+  tx: Prisma.TransactionClient | typeof prisma = prisma,
+) => {
+  let db;
+  if (tx) {
+    db = tx[model];
+  } else {
+    db = prisma[model];
+  }
 
   const items = await db.findMany({
     where: where || {},
