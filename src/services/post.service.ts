@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client/extension";
 import { prisma } from "../../db.js";
 import { paginate } from "../utils/paginate.js";
 import { FeedRank } from "../utils/FeedRank.js";
+import { cursorPagination } from "../utils/cursorPagination.js";
 
 export const isUnreadNotification = async (userId: string) => {
   const notifications = await prisma.notification.findFirst({
@@ -11,6 +12,120 @@ export const isUnreadNotification = async (userId: string) => {
     },
   });
   return notifications;
+};
+
+export const getNotifications = async (
+  userId: string,
+  cursor: { id: string } | null,
+) => {
+  const response = await prisma.$transaction(
+    async (tx: Prisma.TransactionClient) => {
+      const notifications = await cursorPagination({
+        model: "notification",
+        take: 8,
+        where: {
+          recipientId: userId,
+        },
+        cursor: cursor,
+        orderBy: [
+          {
+            createdAt: "desc",
+          },
+        ],
+      });
+      const actorIds = notifications.items.map(
+        (notification) => notification.actorId,
+      );
+      const postIds = notifications.items.map(
+        (notification) => notification.postId,
+      );
+
+      const postsWithRating = notifications.items
+        .filter((notification) => notification.type === NotificationType.Rate)
+        .map((notification) => {
+          return { actorId: notification.actorId, postId: notification.postId };
+        });
+
+      const actorData = await tx.user.findMany({
+        where: {
+          id: {
+            in: actorIds,
+          },
+        },
+        select: {
+          id: true,
+          displayName: true,
+          username: true,
+          pfpUrl: true,
+        },
+      });
+
+      const postThumbnails = await tx.postMedia.findMany({
+        where: {
+          postId: {
+            in: postIds,
+          },
+        },
+        select: {
+          postId: true,
+          mediaUrl: true,
+        },
+      });
+
+      let ratings = [];
+
+      if (postsWithRating.length > 0) {
+        ratings = await tx.rating.findMany({
+          where: {
+            ratedByUserId: {
+              in: postsWithRating.map((post) => post.actorId),
+            },
+            postId: {
+              in: postsWithRating.map((post) => post.postId),
+            },
+          },
+        });
+      }
+
+      notifications.items = notifications.items.map((notification) => {
+        const actor = actorData.find(
+          (actor) => actor.id === notification.actorId,
+        );
+        const post = postThumbnails.find(
+          (post) => post.postId === notification.postId,
+        );
+
+        const { recipientId, actorId, postId, ...notificationDetails } = {
+          ...notification,
+        };
+
+        const response = {
+          ...notificationDetails,
+          actor: { ...actor },
+          post: post,
+        };
+
+        let rating;
+        if (notification.type === NotificationType.Rate) {
+          rating = ratings.find(
+            (rating) =>
+              rating.postId === notification.postId &&
+              rating.ratedByUserId === notification.actorId,
+          );
+        }
+
+        if (rating) {
+          response.rating = {
+            score: rating.score,
+            total: 10,
+          };
+        }
+        return response;
+      });
+      return notifications;
+    },
+  );
+  return response;
 };
 
 export const createPost = async (
@@ -150,7 +265,6 @@ export const registerScore = async (
           score: score,
         },
       });
-      console.log(registeredRating);
       const post = await scorePost(postId, tx);
       const authorId = post.authorId;
 
@@ -174,7 +288,6 @@ export const registerComment = async (
   postId: string,
   comment: string,
 ) => {
-
   const registeredComment = await prisma.$transaction(
     async (tx: Prisma.TransactionClient) => {
       const registeredComment = await tx.comment.create({
@@ -255,7 +368,10 @@ export const getLikeCountOfEachPost = async (postIds: [string]) => {
   return likeCount;
 };
 
-export const getPostRating = async (postIds: [string], db: Prisma.TransactionClient | typeof prisma = prisma) => {
+export const getPostRating = async (
+  postIds: [string],
+  db: Prisma.TransactionClient | typeof prisma = prisma,
+) => {
   const postRating = await db.rating.groupBy({
     by: ["postId"],
     where: {
@@ -265,7 +381,6 @@ export const getPostRating = async (postIds: [string], db: Prisma.TransactionCli
     },
     _avg: { score: true },
   });
-  console.log("rating = ", postRating);
   return postRating;
 };
 

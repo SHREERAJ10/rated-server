@@ -58,19 +58,7 @@ export const getNotification = async (req: Request, res: Response) => {
         }
       : null;
 
-    const notifications = await cursorPagination({
-      model: "notification",
-      take: 2,
-      where: {
-        recipientId: id,
-      },
-      cursor: cursor,
-      orderBy: [
-        {
-          createdAt: "desc",
-        },
-      ],
-    });
+    const notifications = await postService.getNotifications(id, cursor);
 
     res.status(200).json({
       success: true,
