@@ -20,6 +20,7 @@ model User {
   bio         String?
   createdAt   DateTime @default(now())
   posts       Post[]
+  notification Notification[]
 }
 
 model Post {
@@ -95,4 +96,5 @@ model Notification {
   isRead      Boolean          @default(false)
   type        NotificationType
   createdAt   DateTime         @default(now())
+  user        User             @relation(fields: [recipientId], references: [id])
 }
