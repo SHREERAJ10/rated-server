@@ -8,68 +8,6 @@ import {
 } from "../utils/cursorPagination.js";
 import { rollbackMedia } from "../utils/rollbackMedia.js";
 
-export const getNotificationStatus = async (req: Request, res: Response) => {
-  try {
-    const id = req.uid ?? "";
-    res.writeHead(200, {
-      "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
-      Connection: "keep-alive",
-    });
-    const isNotificationUnread = await postService.isUnreadNotification(id);
-    const payload = isNotificationUnread
-      ? {
-          isNotificationUnread: true,
-        }
-      : {
-          isNotificationUnread: false,
-        };
-    res.write(`data: ${JSON.stringify(payload)}\n\n`);
-
-    const intervalId = setInterval(async () => {
-      const isNotificationUnread = await postService.isUnreadNotification(id);
-      const payload = isNotificationUnread
-        ? {
-            isNotificationUnread: true,
-          }
-        : {
-            isNotificationUnread: false,
-          };
-      res.write(`data: ${JSON.stringify(payload)}\n\n`);
-    }, 1000 * 30);
-
-    req.on("close", () => {
-      clearInterval(intervalId);
-      res.end();
-    });
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ success: false, error: "internal server error!" });
-  }
-};
-
-export const getNotification = async (req: Request, res: Response) => {
-  try {
-    const id = req.uid ?? "";
-    const notificationId = req.query.notificationId;
-    const cursor = notificationId
-      ? {
-          id: notificationId,
-        }
-      : null;
-
-    const notifications = await postService.getNotifications(id, cursor);
-
-    res.status(200).json({
-      success: true,
-      data: notifications,
-    });
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ success: false, error: "internal server error!" });
-  }
-};
-
 export const createPost = async (req: Request, res: Response) => {
   const postData = req.body;
   try {
@@ -449,35 +387,6 @@ interface Comment {
   createdAt: string;
   commentor: Commentor;
 }
-
-// export const getComment = async (req: Request, res: Response) => {
-//   try {
-//     const postId = req.params.postId as string;
-//     const comments = await postService.getComment(postId);
-//     const commentorIds: [string] = comments.items.map(
-//       (comment: Comment) => comment.commentedByUserId,
-//     );
-//     const commentors = await postService.getCommentors(commentorIds);
-
-//     comments.items = comments.items.map((comment: Comment) => {
-//       comment.commentor = commentors.filter((commentor: Commentor) => {
-//         return commentor.id == comment.commentedByUserId;
-//       })[0];
-//       return {
-//         ...comment,
-//         commentor: comment.commentor,
-//       };
-//     });
-
-//     res.status(200).json({
-//       success: true,
-//       data: comments,
-//     });
-//   } catch (err) {
-//     console.log(err);
-//     res.status(500).json({ success: false, error: "internal server error!" });
-//   }
-// };
 
 export const getComments = async (req: Request, res: Response) => {
   try {

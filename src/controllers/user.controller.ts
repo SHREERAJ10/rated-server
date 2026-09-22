@@ -66,3 +66,71 @@ export const getOnboardingStatus = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, error: "internal server error!" });
   }
 };
+
+export const updateNotificationStatus = async (req: Request, res: Response) => {
+  try {
+    const id = req.uid ?? "";
+    await userService.updateNotificationStatus(id);
+    res.status(200).json({
+      success: true,
+      data: null,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ success: false, error: "internal server error!" });
+  }
+};
+
+export const getNotificationStatus = async (req: Request, res: Response) => {
+  try {
+    const id = req.uid ?? "";
+    res.writeHead(200, {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      Connection: "keep-alive",
+    });
+    const isNotificationRead = await userService.isNotificationRead(id);
+    const payload = {
+      isNotificationRead: isNotificationRead,
+    };
+    res.write(`data: ${JSON.stringify(payload)}\n\n`);
+
+    const intervalId = setInterval(async () => {
+      const isNotificationRead = await userService.isNotificationRead(id);
+      const payload = {
+        isNotificationRead: isNotificationRead,
+      };
+      res.write(`data: ${JSON.stringify(payload)}\n\n`);
+    }, 1000 * 30);
+
+    req.on("close", () => {
+      clearInterval(intervalId);
+      res.end();
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ success: false, error: "internal server error!" });
+  }
+};
+
+export const getNotification = async (req: Request, res: Response) => {
+  try {
+    const id = req.uid ?? "";
+    const notificationId = req.query.cursor;
+    const cursor = notificationId
+      ? {
+          id: notificationId,
+        }
+      : null;
+
+    const notifications = await userService.getNotifications(id, cursor);
+
+    res.status(200).json({
+      success: true,
+      data: notifications,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ success: false, error: "internal server error!" });
+  }
+};
