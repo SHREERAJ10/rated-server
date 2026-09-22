@@ -13,13 +13,14 @@ datasource db {
 }
 
 model User {
-  id          String   @id @default(uuid())
-  displayName String   @db.VarChar(40)
-  username    String   @unique @db.VarChar(40)
-  pfpUrl      String
-  bio         String?
-  createdAt   DateTime @default(now())
-  posts       Post[]
+  id           String         @id @default(uuid())
+  displayName  String         @db.VarChar(40)
+  username     String         @unique @db.VarChar(40)
+  pfpUrl       String
+  bio          String?
+  createdAt    DateTime       @default(now())
+  posts        Post[]
+  lastReadAt   DateTime       @default(now())
   notification Notification[]
 }
 
@@ -93,7 +94,6 @@ model Notification {
   recipientId String
   actorId     String
   postId      String
-  isRead      Boolean          @default(false)
   type        NotificationType
   createdAt   DateTime         @default(now())
   user        User             @relation(fields: [recipientId], references: [id])
