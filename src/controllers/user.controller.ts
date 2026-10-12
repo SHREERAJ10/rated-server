@@ -67,6 +67,27 @@ export const getOnboardingStatus = async (req: Request, res: Response) => {
   }
 };
 
+export const fetchUsers = async (req: Request, res: Response) => {
+  try {
+    const query = req.query.searchQuery as string;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = 10; // Number of users to fetch per page
+    const offset = (page - 1) * limit; // Calculate the offset based on the page number
+    const users = await userService.fetchUsers(query, limit, offset);
+    const response = {
+      ...users,
+      hasMore: users.totalCount <= page * limit ? false : true,
+    };
+    res.status(200).json({
+      success: true,
+      data: response,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ success: false, error: "internal server error!" });
+  }
+};
+
 export const updateNotificationStatus = async (req: Request, res: Response) => {
   try {
     const id = req.uid ?? "";

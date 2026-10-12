@@ -203,3 +203,38 @@ export const updateNotificationStatus = async (userId: string) => {
     },
   });
 };
+
+export const fetchUsers = async (
+  query: string,
+  limit: number,
+  offset: number,
+) => {
+  const search = query.trim();
+  const pattern = `%${search}%`;
+  const count = await prisma.$queryRaw`
+    SELECT COUNT(*)
+    FROM "User"
+    WHERE username ILIKE ${pattern}
+     OR "displayName" ILIKE ${pattern}
+    `;
+  const totalCount = Number(count[0].count);
+  const users = await prisma.$queryRaw`
+    SELECT id, username, "displayName", "pfpUrl"
+  FROM "User"
+  WHERE username ILIKE ${pattern}
+     OR "displayName" ILIKE ${pattern}
+  ORDER BY
+    CASE WHEN username ILIKE ${search} THEN 0
+     WHEN username ILIKE ${`${search}%`} THEN 1
+     WHEN "displayName" ILIKE ${search} THEN 2
+     WHEN "displayName" ILIKE ${`${search}%`} THEN 3
+    ELSE 4
+  END
+  LIMIT ${limit} OFFSET ${offset}
+    `;
+  const response = {
+    items: users,
+    totalCount: totalCount,
+  };
+  return response;
+};
