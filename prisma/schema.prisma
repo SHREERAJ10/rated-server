@@ -13,15 +13,18 @@ datasource db {
 }
 
 model User {
-  id              String                                                                                                       @id @default(uuid())
-  displayName     String                                                                                                       @db.VarChar(40)
-  username        String                                                                                                       @unique @db.VarChar(40)
-  pfpUrl          String
-  bio             String?
-  createdAt       DateTime                                                                                                     @default(now())
-  posts           Post[]
-  lastReadAt      DateTime                                                                                                     @default(now())
-  notification    Notification[]
+  id           String         @id @default(uuid())
+  displayName  String         @db.VarChar(40)
+  username     String         @unique @db.VarChar(40)
+  pfpUrl       String
+  bio          String?
+  createdAt    DateTime       @default(now())
+  posts        Post[]
+  lastReadAt   DateTime       @default(now())
+  notification Notification[]
+
+  @@index([username(ops: raw("gin_trgm_ops"))], type: Gin)
+  @@index([displayName(ops: raw("gin_trgm_ops"))], type: Gin)
 }
 
 model Post {
