@@ -4,11 +4,22 @@ import postRouter from "./routes/post.route.js";
 import verifyToken from "./middlewares/verifyToken.js";
 import { generateCloudinaryUploadSignature } from "./utils/generateCloudinaryUploadSignature.js";
 import cors from "cors";
+import { configDotenv } from "dotenv";
+import helmet from "helmet";
+import { prisma } from "../db.js";
 
+configDotenv();
+
+const PORT = process.env.PORT || 3000;
 const app = express();
 
 app.use(express.json());
-app.use(cors());
+app.use(helmet());
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL,
+  }),
+);
 
 app.get("/signature", verifyToken, async (req: Request, res: Response) => {
   const id = req.uid ?? "";
@@ -18,6 +29,11 @@ app.get("/signature", verifyToken, async (req: Request, res: Response) => {
 app.use("/user", verifyToken, userRouter);
 app.use("/post", verifyToken, postRouter);
 
-app.listen(3000, () => {
-  console.log("Listening at port 3000");
+app.get("/health", async (req, res) => {
+  await prisma.$queryRaw`SELECT 1`;
+  res.json({ status: "ok" });
+});
+
+app.listen(PORT, () => {
+  console.log("Server is running");
 });
