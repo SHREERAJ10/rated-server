@@ -13,6 +13,76 @@ Content-Type: application/json
 
 ###
 
-GET {{baseUrl}}/post
+GET {{baseUrl}}/post/?postId=602f8bb8-2257-4c9f-9cbc-4cf36e9fa189&feedScore=0.2871745887492588
 Content-Type: application/json
+Authorization: bearer {{login.response.body.idToken}}
+
+###
+
+GET {{baseUrl}}/user/me
+Content-Type: application/json
+Authorization: bearer {{login.response.body.idToken}}
+
+###
+
+GET {{baseUrl}}/post/5f663d60-20b5-4447-90de-00b36e1a599f/comment
+Content-Type: application/json
+Authorization: bearer {{login.response.body.idToken}}
+
+###
+
+POST {{baseUrl}}/post/6948e440-1220-42c6-a26c-1041c1471935/like
+Content-Type: application/json
+Authorization: bearer {{login.response.body.idToken}}
+
+###
+DELETE {{baseUrl}}/post/6948e440-1220-42c6-a26c-1041c1471935/unlike
+Content-Type: application/json
+Authorization: bearer {{login.response.body.idToken}}
+
+###
+
+GET {{baseUrl}}/post/6948e440-1220-42c6-a26c-1041c1471935/comment
+Content-Type: application/json
+Authorization: bearer {{login.response.body.idToken}}
+###
+
+POST {{baseUrl}}/post/6948e440-1220-42c6-a26c-1041c1471935/comment
+Content-Type: application/json
+Authorization: bearer {{login.response.body.idToken}}
+
+{
+  "comment": "Commented by Shreeraj"
+}
+
+###
+
+GET {{baseUrl}}/post/662ac17c-328a-4940-82cb-1ac076b2b529
+Authorization: bearer {{login.response.body.idToken}}
+
+###
+
+GET {{baseUrl}}/user
+Authorization: bearer {{login.response.body.idToken}}
+
+###
+
+GET {{baseUrl}}/user/notification?notificationId=f3812f96-48d9-423e-84e5-f1db7e0064bb
+Authorization: bearer {{login.response.body.idToken}}
+
+###
+
+GET {{baseUrl}}/user/notification/status
+Authorization: bearer {{login.response.body.idToken}}
+Accept: text/event-stream
+Cache-Control: no-cache
+Connection: keep-alive
+
+###
+
+GET {{baseUrl}}/user/search?searchQuery=ren
+Authorization: bearer {{login.response.body.idToken}}
+
+###
+GET {{baseUrl}}/user/smith.erwin/posts
 Authorization: bearer {{login.response.body.idToken}}
