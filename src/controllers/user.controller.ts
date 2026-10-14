@@ -110,11 +110,6 @@ export const getNotificationStatus = async (req: Request, res: Response) => {
       "Cache-Control": "no-cache",
       Connection: "keep-alive",
     });
-    const isNotificationRead = await userService.isNotificationRead(id);
-    const payload = {
-      isNotificationRead: isNotificationRead,
-    };
-    res.write(`data: ${JSON.stringify(payload)}\n\n`);
 
     const intervalId = setInterval(async () => {
       const isNotificationRead = await userService.isNotificationRead(id);
