@@ -1,7 +1,6 @@
 import type { Request, Response } from "express";
 import { Comment, Post, Score } from "../models/post.model.js";
 import * as postService from "../services/post.service.js";
-import { paginate } from "../utils/paginate.js";
 import {
   cursorPagination,
   type CursorPaginationParams,
@@ -17,7 +16,7 @@ export const createPost = async (req: Request, res: Response) => {
 
     res.status(200).json({
       success: true,
-      message: "Post created successfully",
+      message: "Post has been shared",
       data: post,
     });
   } catch (err) {
@@ -173,99 +172,6 @@ export const getSinglePost = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, error: "internal server error!" });
   }
 };
-
-// export const getPosts = async (req: Request, res: Response) => {
-//   try {
-//     const id = req.uid ?? "";
-//     const pageSize = 5;
-//     const modelName = "post";
-//     const page = Number(req.query.page ?? 1);
-//     const posts = await paginate(
-//       page,
-//       pageSize,
-//       modelName,
-//       {},
-//       {
-//         postMedia: true,
-//         author: {
-//           select: {
-//             id: true,
-//             displayName: true,
-//             username: true,
-//             pfpUrl: true,
-//           },
-//         },
-//         like: {
-//           where: {
-//             likedByUserId: id,
-//           },
-//           select: {
-//             id: true,
-//           },
-//         },
-//         rating: {
-//           where: {
-//             ratedByUserId: id,
-//           },
-//           select: {
-//             id: true,
-//             score: true,
-//           },
-//         },
-//         _count: {
-//           select: { like: true, comment: true, rating: true },
-//         },
-//       },
-//     );
-
-//     const postIds = posts.items.map((post: Post) => post.id);
-
-//     const postRating = await postService.getPostRating(postIds);
-
-//     posts.items = posts.items.map((post: Post) => {
-//       const filteredRating = postRating.filter((rating: Rating) => {
-//         return rating.postId == post.id;
-//       });
-
-//       const ratingScore =
-//         filteredRating.length != 0
-//           ? filteredRating.map((rating: Rating) => {
-//               const score = Number(rating._avg.score.toFixed(1));
-//               return { score: score ?? 0, total: 10 };
-//             })[0]
-//           : { score: 0, total: 10 };
-
-//       return {
-//         id: post.id,
-//         caption: post.caption,
-//         createdAt: post.createdAt,
-//         author: post.author,
-//         media: post.postMedia,
-//         like: {
-//           count: post._count.like,
-//         },
-//         comment: {
-//           count: post._count.comment,
-//         },
-//         ratingScore: {
-//           count: post._count.rating,
-//           data: ratingScore,
-//           userRatingScore: post.rating[0]?.score,
-//         },
-//         isLikedByUser: post.like.length != 0 ? true : false,
-//         isRatedByUser: post.rating.length != 0 ? true : false,
-//       };
-//     });
-
-//     res.status(200).json({
-//       success: true,
-//       data: posts,
-//     });
-//   } catch (err) {
-//     console.log(err);
-//     res.status(500).json({ success: false, error: "internal server error!" });
-//   }
-// };
 
 export const getPostsCursor = async (req: Request, res: Response) => {
   try {
@@ -457,19 +363,24 @@ export const getPostLikers = async (req: Request, res: Response) => {
 export const getUserPosts = async (req: Request, res: Response) => {
   try {
     const username = req.params.username as string;
-    const pageSize = 10;
-    const modelName = "post";
-    const page = Number(req.query.page ?? 1);
-    const userPosts = await paginate(
-      page,
-      pageSize,
-      modelName,
-      {
+    const viewerId = req.uid ?? "";
+    const postId = req.query.cursor as string;
+    const take = 5;
+    const model = "post";
+    const myCursor = postId
+      ? {
+          id: postId,
+        }
+      : null;
+    const cursorPaginationArgs: CursorPaginationParams = {
+      take: take,
+      model: model,
+      where: {
         author: {
           username: username,
         },
       },
-      {
+      include: {
         postMedia: true,
         author: {
           select: {
@@ -479,40 +390,71 @@ export const getUserPosts = async (req: Request, res: Response) => {
             pfpUrl: true,
           },
         },
+        like: {
+          where: {
+            likedByUserId: viewerId,
+          },
+          select: {
+            id: true,
+          },
+        },
+        rating: {
+          where: {
+            ratedByUserId: viewerId,
+          },
+          select: {
+            id: true,
+            score: true,
+          },
+        },
         _count: {
-          select: { like: true, comment: true },
+          select: { like: true, comment: true, rating: true },
         },
       },
-    );
+      cursor: myCursor,
+      orderBy: {
+        createdAt: "desc",
+      },
+    };
+
+    const userPosts = await cursorPagination(cursorPaginationArgs);
 
     const postIds = userPosts.items.map((post: Post) => post.id);
 
     const postsRating = await postService.getPostRating(postIds);
 
     userPosts.items = userPosts.items.map((post: Post) => {
-      const postRating = postsRating.find(
-        (rating: Rating) => rating.postId === post.id,
-      );
-      if (postRating) {
-        post.rating = {
-          score: Math.round(postRating._avg.score) ?? 0,
-          total: 10,
-        };
-      } else {
-        post.rating = {
-          score: 0,
-          total: 10,
-        };
-      }
+      const filteredRating = postsRating.filter((rating: Rating) => {
+        return rating.postId == post.id;
+      });
+
+      const ratingScore =
+        filteredRating.length != 0
+          ? filteredRating.map((rating: Rating) => {
+              const score = Number(rating._avg.score.toFixed(1));
+              return { score: score ?? 0, total: 10 };
+            })[0]
+          : { score: 0, total: 10 };
+
       return {
         id: post.id,
         author: post.author,
         caption: post.caption,
         media: post.postMedia,
         createdAt: post.createdAt,
-        rating: post.rating,
-        like: { count: post._count.like },
-        comment: { count: post._count.comment },
+        like: {
+          count: post._count.like,
+        },
+        comment: {
+          count: post._count.comment,
+        },
+        ratingScore: {
+          count: post._count.rating,
+          data: ratingScore,
+          userRatingScore: post.rating[0]?.score,
+        },
+        isLikedByUser: post.like.length != 0 ? true : false,
+        isRatedByUser: post.rating.length != 0 ? true : false,
       };
     });
 
@@ -531,7 +473,6 @@ export const removeRating = async (req: Request, res: Response) => {
     const id = req.uid ?? "";
     const postId = req.params.postId as string;
     const removeRating = await postService.removeRating(id, postId);
-    await postService.scorePost(postId);
     res.status(200).json({
       success: true,
       data: removeRating,
