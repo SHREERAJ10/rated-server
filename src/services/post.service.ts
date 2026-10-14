@@ -369,15 +369,23 @@ export const getSinglePost = async (id: string, postId: string) => {
 };
 
 export const removeRating = async (id: string, postId: string) => {
-  const removeRating = await prisma.rating.delete({
-    where: {
-      ratedByUser: {
-        ratedByUserId: id,
-        postId: postId,
-      },
+  const response = await prisma.$transaction(
+    async (tx: Prisma.TransactionClient) => {
+      const removeRating = await tx.rating.delete({
+        where: {
+          ratedByUser: {
+            ratedByUserId: id,
+            postId: postId,
+          },
+        },
+      });
+      await scorePost(postId, tx);
+
+      return removeRating;
     },
-  });
-  return removeRating;
+  );
+
+  return response;
 };
 
 export const scorePost = async (

@@ -24,8 +24,7 @@ export const createPost = async (req: Request, res: Response) => {
     const mediaToRollback = media?.map(
       (medium: { publicId: string }) => medium.publicId,
     );
-    const response = await rollbackMedia(mediaToRollback);
-    console.log("Rollback response:", response);
+    await rollbackMedia(mediaToRollback);
     console.log(err);
     res.status(500).json({ success: false, error: "internal server error!" });
   }

@@ -61,7 +61,7 @@ export const isNotificationRead = async (userId: string) => {
             lastReadAt: true,
           },
         })
-      ).lastReadAt;
+      )?.lastReadAt;
       const notifications = await prisma.notification.findFirst({
         where: {
           recipientId: userId,
