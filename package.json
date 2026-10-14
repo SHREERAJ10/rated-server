@@ -8,7 +8,8 @@
     "watch": "pnpm tsx watch ./src/index.ts",
     "dev": "pnpm tsx ./src/index.ts",
     "lint": "npx eslint ./src/**",
-    "lint:fix": "npx eslint ./src/** --fix"
+    "lint:fix": "npx eslint ./src/** --fix",
+    "start": "tsx src/index.ts"
   },
   "keywords": [],
   "author": "",
